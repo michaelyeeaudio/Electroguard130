@@ -502,17 +502,72 @@ def read_every_second():
 #    print('t = ', t)
     minutes = int(t[14:16])
     hours = int(t[11:13])
-    if (previousHours != hours) :
-        previousHours = hours
+    day = hours
+#    day = int(t[8:9])
+    if (previousDay != day) :
+        previousDay = day
         print("logging diags")
         fout = open('/home/pi/Documents/ElectroguardPi/diags.txt', 'a')
-        fout.write(RTCTime + ","+ str(mv2500)[0:6] + "," + str(V5REF)[0:6] + "," + str(M5VREF)[0:6] + "\n")
+        fout.write(RTCTime + ","+ str(Avg_CH0/Avg_Cnt)[0:6] + "," + str(Avg_CH1/Avg_Cnt)[0:6] + "," + str(Avg_CH2/Avg_Cnt)[0:6] + "," + str(Avg_CH3/Avg_Cnt)[0:6] + ","\
+            + str(Max_CH0)[0:6] + "," + str(Max_CH1)[0:6] + "," + str(Max_CH2)[0:6] + ","  + str(Max_CH3)[0:6] + ","\
+            + str(Min_CH0)[0:6] + "," + str(Min_CH1)[0:6] + "," + str(Min_CH2)[0:6] + ","  + str(Min_CH3)[0:6] + ","\
+            + str(Min_CH0)[0:6] + "," + str(Min_CH1)[0:6] + "," + str(Min_CH2)[0:6] + ","  + str(Min_CH3)[0:6] + ","\
+            + str(CH0_SafeCNT/Avg_Cnt)[0:6] "," + str(CH1_SafeCNT/Avg_Cnt)[0:6] + "," + str(CH2_SafeCNT/Avg_Cnt)[0:6] + "," + str(CH3_SafeCNT/Avg_Cnt)[0:6] + "\n")
         fout.close()
+        Avg_Cnt = 0
+        Avg_CH0 = 0
+        Avg_CH1 = 0
+        Avg_CH2 = 0
+        Avg_CH3 = 0
+        Max_CH0 = 0
+        Max_CH1 = 0
+        Max_CH2 = 0
+        Max_CH3 = 0
+        Min_CH0 = 5
+        Min_CH1 = 5
+        Min_CH2 = 5
+        Min_CH3 = 5
+        CH0_SafeCNT = 0
+        CH1_SafeCNT = 0
+        CH2_SafeCNT = 0
+        CH3_SafeCNT = 0
+        
         
     if (previousMin != minutes) :
         previousMin = minutes
         RTCTime = getRTCtime()
-
+        Avg_Cnt = Avg_Cnt + 1
+        Avg_CH0 = Avg_CH0 + CH0
+        Avg_CH1 = Avg_CH1 + CH1
+        Avg_CH2 = Avg_CH2 + CH2
+        Avg_CH3 = Avg_CH3 + CH3
+        if(Max_CH0 < CH0):
+            Max_CH0 = CH0
+        if(Max_CH1 < CH1):
+            Max_CH1 = CH1
+        if(Max_CH2 < CH2):
+            Max_CH2 = CH2
+        if(Max_CH3 < CH3):
+            Max_CH3 = CH3
+        if(Min_CH0 > CH0):
+            Min_CH0 = CH0
+        if(Min_CH1 > CH1):
+            Min_CH1 = CH1
+        if(Min_CH2 > CH2):
+            Min_CH2 = CH2
+        if(Min_CH3 > CH3):
+            Min_CH3 = CH3
+        
+        if(ButtCol1 != "green"):
+            CH0_SafeCNT++
+        if(ButtCol2 != "green"):
+            CH1_SafeCNT++
+        if(ButtCol3 != "green"):
+            CH2_SafeCNT++     
+        if(ButtCol4 != "green"):
+            CH3_SafeCNT++            
+            
+            
 #        print (RTCTime)
         print("logging")
         fout = open('/home/pi/Documents/ElectroguardPi/Electroguard.txt', 'a')
