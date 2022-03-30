@@ -1,0 +1,38 @@
+Calibrate130.py:
+   - logs data
+   - programs serial number
+   - reads things from Non-Vol (calibration data)
+   - acquires data 1/sec, writes data 1/30sec
+
+I2C_EguardSimple.py:
+   - reads I2C calibration data
+   - checks checksum
+   - computes gain and offset
+   - writes gain and offset
+   - numbers need for 0V and 1V need to be written before this routine
+
+ReadI2C.py:
+   - Reads data and time from RTC
+   - Reads calibration constants
+
+CheckUSB.py:
+   - looks for USB drive
+
+LogData130.py:
+   - programs serial number
+   - reads things from Non-Vol (calibration data) 
+   - reads ADCs
+   - Does not use Calibration
+
+scratchpad.py:
+   - misc copy space
+
+TimeSerNum.py:
+   - looks at current time
+   - Checks to see if date/time is correct
+   - if not, enters date/time, programs date/time
+
+ElectroguardMeter1a.py:
+   - meter display of channel 1
+
+
