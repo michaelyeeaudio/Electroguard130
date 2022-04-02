@@ -22,6 +22,7 @@ from smbus import SMBus
 bus1 = SMBus(1)
 previousMin = 0
 previousHours = 0
+previousDay = 0
 bus = 0
 device = 0
 spi = spidev.SpiDev()
@@ -37,6 +38,29 @@ HEARTBEAT = 21
 #global PIN21
 PIN21 = 1
 GPIO.setup(HEARTBEAT, GPIO.OUT, initial=GPIO.HIGH)
+Avg_Cnt = 1
+Avg_CH0 = 0
+Avg_CH1 = 0
+Avg_CH2 = 0
+Avg_CH3 = 0
+Max_CH0 = 0
+Max_CH1 = 0
+Max_CH2 = 0
+Max_CH3 = 0
+Min_CH0 = 5
+Min_CH1 = 5
+Min_CH2 = 5
+Min_CH3 = 5
+CH0_SafeCNT = 0
+CH1_SafeCNT = 0
+CH2_SafeCNT = 0
+CH3_SafeCNT = 0
+Max_mv2500 = 0
+Min_mv2500 = 5
+Max_V5REF = 0
+Min_V5REF = 5
+Max_M5VREF = -10
+Min_M5VREF = 10
 
 #various constants
 ButtCol1 = "white"
@@ -213,7 +237,7 @@ def select(number):
             print("loc1 = ", loc1)
             print("loc2 = ", loc2)
             newname = SerNum
-            
+#first the big data file            
             source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
             destination = "/home/pi/Documents/"
             shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
@@ -227,11 +251,18 @@ def select(number):
             destination = "/media/pi/" + dest[loc1+2:loc2-1]
             print("1 destination =", destination)
             print("1 source =", source)
-            SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
-#            shutil.copy(source, destination)              #writes to Flash Memory
-#            os.system("cp /home/pi/Documents/ElectroguardPi/Electroguard.txt /home/pi/dest")
-#            os.system("cp source /media/pi/dest")
             shutil.copy(source, destination)              #writes to Flash Memory
+            
+#second the small data file            
+            source = "/home/pi/Documents/ElectroguardPi/diags.txt"
+            destination = "/home/pi/Documents/"
+            shutil.copy(source, destination)            #copy Electroguard.txt into /Document
+            os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".txt")
+            source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".txt"
+            destination = "/media/pi/" + dest[loc1+2:loc2-1]
+            SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
+            shutil.copy(source, destination)              #writes to Flash Memory
+            
             os.system("sync")
             time.sleep(5)
             SelSaveData.config(bg="yellow", activebackground="yellow",  text="Saving Data")
@@ -481,8 +512,33 @@ def read_every_second():
     global x
     global SigIN
     global previousMin
+    global previousDay
     global RTCTime
     global previousHours
+    global Avg_Cnt
+    global Avg_CH0
+    global Avg_CH1
+    global Avg_CH2
+    global Avg_CH3
+    global Max_CH0
+    global Max_CH1
+    global Max_CH2
+    global Max_CH3
+    global Min_CH0
+    global Min_CH1
+    global Min_CH2
+    global Min_CH3
+    global CH0_SafeCNT
+    global CH1_SafeCNT
+    global CH2_SafeCNT
+    global CH3_SafeCNT
+    global Max_mv2500
+    global Min_mv2500
+    global Max_V5REF
+    global Min_V5REF
+    global Max_M5VREF
+    global Min_M5VREF
+    
     
     get_adcs()
     if choice == 1:
@@ -500,9 +556,11 @@ def read_every_second():
     
     t = str(datetime.now())           #read the time
 #    print('t = ', t)
+    
     minutes = int(t[14:16])
     hours = int(t[11:13])
     day = hours
+    
 #    day = int(t[8:9])
     if (previousDay != day) :
         previousDay = day
@@ -511,8 +569,9 @@ def read_every_second():
         fout.write(RTCTime + ","+ str(Avg_CH0/Avg_Cnt)[0:6] + "," + str(Avg_CH1/Avg_Cnt)[0:6] + "," + str(Avg_CH2/Avg_Cnt)[0:6] + "," + str(Avg_CH3/Avg_Cnt)[0:6] + ","\
             + str(Max_CH0)[0:6] + "," + str(Max_CH1)[0:6] + "," + str(Max_CH2)[0:6] + ","  + str(Max_CH3)[0:6] + ","\
             + str(Min_CH0)[0:6] + "," + str(Min_CH1)[0:6] + "," + str(Min_CH2)[0:6] + ","  + str(Min_CH3)[0:6] + ","\
-            + str(Min_CH0)[0:6] + "," + str(Min_CH1)[0:6] + "," + str(Min_CH2)[0:6] + ","  + str(Min_CH3)[0:6] + ","\
-            + str(CH0_SafeCNT/Avg_Cnt)[0:6] "," + str(CH1_SafeCNT/Avg_Cnt)[0:6] + "," + str(CH2_SafeCNT/Avg_Cnt)[0:6] + "," + str(CH3_SafeCNT/Avg_Cnt)[0:6] + "\n")
+            + str(CH0_SafeCNT/Avg_Cnt)[0:6]  +"," + str(CH1_SafeCNT/Avg_Cnt)[0:6]  + "," + str(CH2_SafeCNT/Avg_Cnt)[0:6]  + "," + str(CH3_SafeCNT/Avg_Cnt)[0:6] + ","\
+            + str(Max_mv2500)[0:6] + "," + str(Min_mv2500)[0:6] + "," + str(Max_V5REF)[0:6] + "," + str(Min_V5REF)[0:6] + ","\
+            + str(Max_M5VREF)[0:6] + "," + str(Min_M5VREF)[0:6] +"\n")
         fout.close()
         Avg_Cnt = 0
         Avg_CH0 = 0
@@ -532,6 +591,13 @@ def read_every_second():
         CH2_SafeCNT = 0
         CH3_SafeCNT = 0
         
+        Max_mv2500 = 0
+        Min_mv2500 = 5
+        Max_V5REF = 0
+        Min_V5REF = 5
+        Max_M5VREF = -10
+        Min_M5VREF = +10
+        
         
     if (previousMin != minutes) :
         previousMin = minutes
@@ -543,6 +609,8 @@ def read_every_second():
         Avg_CH3 = Avg_CH3 + CH3
         if(Max_CH0 < CH0):
             Max_CH0 = CH0
+        print("CH0= ", CH0)
+        print("Max_CH0= ", Max_CH0)
         if(Max_CH1 < CH1):
             Max_CH1 = CH1
         if(Max_CH2 < CH2):
@@ -557,16 +625,34 @@ def read_every_second():
             Min_CH2 = CH2
         if(Min_CH3 > CH3):
             Min_CH3 = CH3
+        if(Max_mv2500 < mv2500):
+            Max_mv2500 = mv2500
+        if(Min_mv2500 > mv2500):
+            Min_mv2500 = mv2500
+        if(Max_V5REF < V5REF):
+            Max_V5REF = V5REF
+        if(Min_V5REF > V5REF):
+            Min_V5REF = V5REF
+        if(Max_M5VREF < M5VREF):
+            Max_M5VREF = M5VREF
+        if(Min_M5VREF> M5VREF):
+            Min_M5VREF = M5VREF
         
-        if(ButtCol1 != "green"):
-            CH0_SafeCNT++
-        if(ButtCol2 != "green"):
-            CH1_SafeCNT++
-        if(ButtCol3 != "green"):
-            CH2_SafeCNT++     
-        if(ButtCol4 != "green"):
-            CH3_SafeCNT++            
+        if(ButtCol1 == "green"):
+            CH0_SafeCNT = CH0_SafeCNT +1
+        if(ButtCol2 == "green"):
+            CH1_SafeCNT = CH1_SafeCNT +1
+        if(ButtCol3 == "green"):
+            CH2_SafeCNT = CH2_SafeCNT +1   
+        if(ButtCol4 == "green"):
+            CH3_SafeCNT = CH3_SafeCNT +1           
             
+        print("day = ",day)
+        print("Prev day = ",previousDay)
+        print("Avg_Cnt = ",Avg_Cnt)
+        print("Avg_CH0 = ",Avg_CH0)
+        print("Max_CH0 = ",Max_CH0)
+        print("Min_CH0 = ",Min_CH0)
             
 #        print (RTCTime)
         print("logging")
