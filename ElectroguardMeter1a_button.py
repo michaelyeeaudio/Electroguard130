@@ -61,6 +61,7 @@ Max_V5REF = 0
 Min_V5REF = 5
 Max_M5VREF = -10
 Min_M5VREF = 10
+RmvUSB = 0
 
 #various constants
 ButtCol1 = "white"
@@ -84,10 +85,10 @@ def chk_usb():
     process = subprocess.run("lsblk --json -o NAME".split(), capture_output=True, text=True)    
     blockdevices = json.loads(process.stdout)
     str_block = str(blockdevices)
-    print("str_block = \n", str_block)
+#    print("str_block = \n", str_block)
     if(str_block.find("sda") > 0):
         dest = os.listdir("/media/pi/")
-        print("chk usb dest = \n", dest)
+#        print("chk usb dest = \n", dest)
         if (len(dest) == 0):             #no usb is mounted
 #             cmd = "sudo mkdir /media/pi/usb"
 #             os.system(cmd)
@@ -175,6 +176,7 @@ def select(number):
     global SelChan4
     choice = number
     global label_vis
+    global RmvUSB
     
     if number == 1:
         SelChan1.config(bg="#00A0E3", activebackground="#00A0E3")
@@ -264,12 +266,14 @@ def select(number):
             shutil.copy(source, destination)              #writes to Flash Memory
             
             os.system("sync")
-            time.sleep(5)
+            time.sleep(.5)
+#            SelSaveData.delete()
             SelSaveData.config(bg="yellow", activebackground="yellow",  text="Saving Data")
                 
             cmd = "sudo umount /dev/sda1"
             os.system(cmd)
             SelSaveData.config(bg="green", padx=15, activebackground="green",  text="Remove USB")
+            RmvUSB = 1
                  
     else :
 #        SelChan1.config(bg="green")
@@ -372,7 +376,7 @@ def get_adcs():
     global ButtCol2
     global ButtCol3
     global ButtCol4
-    
+    global RmvUSB
     # CE goes low, conversion of CH0
     GPIO.output(ADC_CS,GPIO.LOW)
     msg = [0x06]
@@ -382,6 +386,7 @@ def get_adcs():
     GPIO.output(ADC_CS,GPIO.HIGH)
     time.sleep(0.001)
     CH0 = ((float)((((CH0_raw[1] & 0x0F)<<8) + CH0_raw[2] - 1365) * 7.5 / 4096))
+#    print("CH0 =  ", CH0)
 #    if choice != 1:
     if (CH0 < RedYell):
         ButtCol1 = "red"
@@ -419,10 +424,6 @@ def get_adcs():
         ButtCol2 = "#00A0E3"
     StatBut2.config(bg=ButtCol2, activebackground=ButtCol2)
     time.sleep(0.001)
-
-#RedYell = -.050
-#YellGrn1 = 0
-#GrnRed2 = .55
 
 # conversion of CH2
     GPIO.output(ADC_CS,GPIO.LOW)
@@ -503,6 +504,14 @@ def get_adcs():
     GPIO.output(ADC_CS,GPIO.HIGH)
     time.sleep(0.001)
     M5VREF = ((float)((((M5V_raw[1] & 0x0F)<<8) + M5V_raw[2] - 1365) * 7.5 / 4096))
+
+# change color of RmvUSB button
+    DEV_PRES = chk_usb()    
+    if(DEV_PRES == 0):
+       if (RmvUSB == 1):
+           RmvUSB = 0
+           print("change button color \n")
+           SelSaveData.config(fg="black", bg="#D0D1AB", padx=15, activebackground="#D0D1AB",  text="Save Data")
     
 #print("+5Vraw = ", (((V5_raw[1] & 0x0F)<<8) + V5_raw[2]))
 #    print("CH0 = %3.3f, CH1 = %3.3f,  CH2 = %3.3f, CH3 = %3.3f, +5V = %3.3f,   2.5V = %3.3f   " % (CH0, CH1, CH2, CH3, V5REF, mv2500))
@@ -677,7 +686,7 @@ p1 = gaugelib.DrawGauge2(
     win,
     max_value=425.0,     #myee
     min_value=-147.0,    #myee
-    size=400,
+    size=500,
     bg_col='black',
     unit = "Volts",bg_sel = 2)
 p1.place(x=40, y=25)
