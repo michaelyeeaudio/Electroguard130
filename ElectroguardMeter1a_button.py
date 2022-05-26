@@ -174,9 +174,11 @@ def select(number):
     global SelChan2
     global SelChan3
     global SelChan4
+    prev_choice = choice
     choice = number
     global label_vis
     global RmvUSB
+    
     
     if number == 1:
         SelChan1.config(bg="#00A0E3", activebackground="#00A0E3")
@@ -207,6 +209,7 @@ def select(number):
         return
         
     elif number == 5:
+        choice = prev_choice
         if(label_vis == 0):
             label_vis = 1
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="white", bg = "black")
@@ -219,6 +222,7 @@ def select(number):
 
 #        print("I'm at 5")
     elif number == 6:
+        choice = prev_choice
         source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
         destination = "/home/pi/Documents/"         
     #    destination = "/media/pi/"+dest[1]
@@ -559,7 +563,7 @@ def read_every_second():
     elif choice == 4:
         SigIN = CH3
     else:
-        SigIN = CH0
+        SigIN = CH3
     p1.set_value(int(SigIN * 1000))   #SigIN is the selected signal to the meter
 #    p1.set_value(int(SigIN))   #SigIN is the selected signal to the meter
     
