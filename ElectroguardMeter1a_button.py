@@ -145,18 +145,29 @@ def read_nvram():
     global ch2offset
     global ch3offset
     global ch4offset
+    global NVSerNum
+    global chansel
+    NVSerNum = ""
     checksum = bus1.read_byte_data(0x6F, 0x20)
     chansel = bus1.read_byte_data(0x6F, 0x21)
     ch1offset = bus1.read_byte_data(0x6F, 0x22)
     ch2offset = bus1.read_byte_data(0x6F, 0x23)
-    print("prev ch2offset =", ch2offset)
     ch3offset = bus1.read_byte_data(0x6F, 0x24)
     ch4offset = bus1.read_byte_data(0x6F, 0x25)
     ch1gain = bus1.read_byte_data(0x6F, 0x26)
     ch2gain = bus1.read_byte_data(0x6F, 0x27)
-    print("prev ch2gain =", ch2gain)
     ch3gain = bus1.read_byte_data(0x6F, 0x28)
     ch4gain = bus1.read_byte_data(0x6F, 0x29)
+    ser_num_len = bus1.read_byte_data(0x6F, 0x30)
+    if (ser_num_len > 12):
+        ser_num_len = 12
+    checksum2 = bus1.read_byte_data(0x6F, 0x31)
+    for x in range(0, ser_num_len):
+        j = bus1.read_byte_data(0x6F, 0x32 + x)
+        NVSerNum = NVSerNum + str(j)
+    print("ser_num = ", NVSerNum)
+    
+    
     if (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
         print("defaults")
         ch1offset = 128
@@ -389,9 +400,8 @@ def get_adcs():
     CH0_raw = spi.xfer2(msg)
     GPIO.output(ADC_CS,GPIO.HIGH)
     time.sleep(0.001)
-    CH0 = ((float)((((CH0_raw[1] & 0x0F)<<8) + CH0_raw[2] - 1365) * 7.5 / 4096))
-#    print("CH0 =  ", CH0)
-#    if choice != 1:
+    CH0 = ((float)((((((CH0_raw[1] & 0x0F)<<8) + CH0_raw[2]) + (ch1offset - 128)) - 1365) * 7.5 / 4096))
+    CH0 = CH0 * (ch1gain / 128)
     if (CH0 < RedYell):
         ButtCol1 = "red"
     elif ((CH0 >= RedYell) & (CH0 < YellGrn1)):
@@ -413,7 +423,9 @@ def get_adcs():
     msg.append(0x40)
     msg.append(0x00)
     CH1_raw = spi.xfer2(msg)
-    CH1 = ((float)((((CH1_raw[1] & 0x0F)<<8) + CH1_raw[2] - 1365) * 7.5 / 4096))
+    CH1 = ((float)((((((CH1_raw[1] & 0x0F)<<8) + CH1_raw[2]) + (ch2offset - 128)) - 1365) * 7.5 / 4096))
+    #CH1 = ((float)((((CH1_raw[1] & 0x0F)<<8) + CH1_raw[2] - 1365) * 7.5 / 4096))
+    CH1 = CH1 * ch2gain/128
     GPIO.output(ADC_CS,GPIO.HIGH)
 #    if choice != 2:
     if (CH1 < RedYell):
@@ -436,8 +448,8 @@ def get_adcs():
     msg.append(0x00)
     CH2_raw = spi.xfer2(msg)
     GPIO.output(ADC_CS,GPIO.HIGH)
-    CH2 = ((float)((((CH2_raw[1] & 0x0F)<<8) + CH2_raw[2] - 1365) * 7.5 / 4096))
-#    if choice != 3:
+    CH2 = ((float)((((((CH2_raw[1] & 0x0F)<<8) + CH2_raw[2]) + (ch3offset - 128)) - 1365) * 7.5 / 4096))
+    CH2 = CH2 * (ch3gain / 128)
     if (CH2 < RedYell):
         ButtCol3 = "red"
     elif ((CH2 >= RedYell) & (CH2 < YellGrn1)):
@@ -460,8 +472,8 @@ def get_adcs():
     msg.append(0x00)
     CH3_raw = spi.xfer2(msg)
     GPIO.output(ADC_CS,GPIO.HIGH)
-    CH3 = ((float)((((CH3_raw[1] & 0x0F)<<8) + CH3_raw[2] - 1365) * 7.5 / 4096))
-#    if choice != 4:
+    CH3 = ((float)((((((CH3_raw[1] & 0x0F)<<8) + CH3_raw[2]) + (ch4offset - 128)) - 1365) * 7.5 / 4096))
+    CH3 = CH3 * (ch4gain / 128)
     if (CH3 < RedYell):
         ButtCol4 = "red"
     elif ((CH3 >= RedYell) & (CH3 < YellGrn1)):
@@ -670,8 +682,38 @@ def read_every_second():
 #        print (RTCTime)
         print("logging")
         fout = open('/home/pi/Documents/ElectroguardPi/Electroguard.txt', 'a')
-        fout.write(RTCTime + ","+ str(CH0)[0:6] + "," + str(CH1)[0:6] + "," + str(CH2)[0:6] + "," + str(CH3)[0:6] + "\n")
-#        fout.write(t[2:16] + ","+ str(CH0)[0:5] + "," + str(CH1)[0:5] + "," + str(CH2)[0:5] + "," + str(CH3)[0:5] + "\n")
+        if ((chansel & 0x0F) == 0x01):
+            fout.write(RTCTime + ","+ str(CH0)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x02):
+            fout.write(RTCTime + ","+ str(CH1)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x03):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH1)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x04):
+            fout.write(RTCTime + ","+ str(CH2)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x05):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH2)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x06):
+            fout.write(RTCTime + "," + str(CH1)[0:6] + "," + str(CH2)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x07):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH1)[0:6] + "," + str(CH2)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x08):
+            fout.write(RTCTime + ","+ str(CH4)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x09):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH3)[0:6] + "\n") 
+        elif ((chansel & 0x0F) == 0x0A):
+            fout.write(RTCTime + "," + str(CH1)[0:6] + "," + str(CH3)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x0B):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH1)[0:6] + "," + str(CH3)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x0C):
+            fout.write(RTCTime + "," + str(CH2)[0:6] + "," + str(CH3)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x0D):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH2)[0:6] + "," + str(CH3)[0:6] + "\n")
+        elif ((chansel & 0x0F) == 0x0E):
+            fout.write(RTCTime + "," + str(CH0)[0:6] + "," + str(CH2)[0:6] + "," + str(CH3)[0:6] + "\n")        
+        elif ((chansel & 0x0F) == 0x0F):
+            fout.write(RTCTime + ","+ str(CH0)[0:6] + "," + str(CH1)[0:6] + "," + str(CH2)[0:6] + "," + str(CH3)[0:6] + "\n")
+        else:
+            fout.write(RTCTime + ","+ str(CH0)[0:6] + "\n")
         print("CH0 = %3.3f, CH1 = %3.3f,  CH2 = %3.3f, CH3 = %3.3f" % (CH0, CH1, CH2, CH3))
         fout.close()
     
@@ -683,9 +725,9 @@ def read_every_second():
         GPIO.output(HEARTBEAT,GPIO.HIGH)
         PIN21 = 1
 
-    
     win.after(400, read_every_second)
-
+    
+read_nvram()
 p1 = gaugelib.DrawGauge2(
     win,
     max_value=425.0,     #myee

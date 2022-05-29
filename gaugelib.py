@@ -152,6 +152,7 @@ class DrawGauge2(ini):
 #                 
     def set_value(self, number: (float, int)):
 #        print("set_value")
+        org_number = number
         number = number if number <= self.max_value else self.max_value
         number = number if number > self.min_value else self.min_value
 #        degree = 30.0 + (number- self.min_value) / (self.max_value - self.min_value) * 300.0
@@ -159,7 +160,7 @@ class DrawGauge2(ini):
 #        degree = 180 is up 0 is down
         draw_dial(self.canvas,self.size/2,self.size/2,-1*degree,self.size/3,8)
 #        print("number = \n", number)
-        label = str('%.3f' % (number/1000))
+        label = str('%.3f' % (org_number/1000))
         self.canvas.delete(self.readout)
         self.readout = self.canvas.create_text(self.size/2,3.3*self.size/6, font=("Arial",int(self.size/24)),fill="white", text=label,angle=0)
 
