@@ -40,28 +40,28 @@ def read_nvram():
     global ch2offset
     global ch3offset
     global ch4offset
-    checksum = bus1.read_byte_data(0x6F, 0x20)
-    chansel = bus1.read_byte_data(0x6F, 0x21)
-    ch1offset = bus1.read_byte_data(0x6F, 0x22)
-    ch2offset = bus1.read_byte_data(0x6F, 0x23)
-    print("prev ch2offset =", ch2offset)
-    ch3offset = bus1.read_byte_data(0x6F, 0x24)
-    ch4offset = bus1.read_byte_data(0x6F, 0x25)
-    ch1gain = bus1.read_byte_data(0x6F, 0x26)
-    ch2gain = bus1.read_byte_data(0x6F, 0x27)
-    print("prev ch2gain =", ch2gain)
-    ch3gain = bus1.read_byte_data(0x6F, 0x28)
-    ch4gain = bus1.read_byte_data(0x6F, 0x29)
-    if (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
-        print("defaults")
-        ch1offset = 128
-        ch2offset = 128
-        ch3offset = 128
-        ch4offset = 128
-        ch1gain = 128
-        ch2gain = 128
-        ch3gain = 128
-        ch4gain = 128
+#     checksum = bus1.read_byte_data(0x6F, 0x20)
+#     chansel = bus1.read_byte_data(0x6F, 0x21)
+#     ch1offset = bus1.read_byte_data(0x6F, 0x22)
+#     ch2offset = bus1.read_byte_data(0x6F, 0x23)
+#     print("prev ch2offset =", ch2offset)
+#     ch3offset = bus1.read_byte_data(0x6F, 0x24)
+#     ch4offset = bus1.read_byte_data(0x6F, 0x25)
+#     ch1gain = bus1.read_byte_data(0x6F, 0x26)
+#     ch2gain = bus1.read_byte_data(0x6F, 0x27)
+#     print("prev ch2gain =", ch2gain)
+#     ch3gain = bus1.read_byte_data(0x6F, 0x28)
+#     ch4gain = bus1.read_byte_data(0x6F, 0x29)
+#    (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
+    print("defaults")
+    ch1offset = 128
+    ch2offset = 128
+    ch3offset = 128
+    ch4offset = 128
+    ch1gain = 128
+    ch2gain = 128
+    ch3gain = 128
+    ch4gain = 128
         
 def I2C_init():
     bus = SMBus(1)
@@ -158,15 +158,36 @@ def Calibration():
 
 # Initialize I2C (SMBus)
 bus = SMBus(1)
-read_nvram()
+#read_nvram()
+print("defaults")
+ch1offset = 128
+ch2offset = 128
+ch3offset = 128
+ch4offset = 128
+ch1gain = 128
+ch2gain = 128
+ch3gain = 128
+ch4gain = 128
 
 #main
 count = 0
-fout = open('output.txt', 'w')
-SerialNum = str(input("enter SerialNum (8digits)"))
-chansel = str(bus1.read_byte_data(0x6F, 0x21))
-fout.write(SerialNum + "," + chansel + "\n")
-fout.close()
+#fout = open('output.txt', 'w')
+#SerialNum = str(input("enter SerialNum (12digits)"))
+#chansel = str(bus1.read_byte_data(0x6F, 0x21))
+
+# #WRITE SERIALNUMBER
+# SerNumLen = SerialNum.len(SerialNum)
+# checksum2 = int(bus1.read_byte_data(0x6F, 0x31))
+# checksum3 = 0
+# SerialNum = ""
+# for x in range (0, SerNumLen):
+#     a = (bus1.write_byte_data(0x6F, 0x32 + x))
+#     SerialNum = SerialNum + chr(a)
+#     checksum3 = checksum3 + a
+# if(checksum2 == (checksum3 & 0x00ff)):
+#     SerNum = SerialNum
+#fout.write(SerialNum + "," + chansel + "\n")
+#fout.close()
 t1 = threading.Thread(target = get_adcs)
 t1.start()
 

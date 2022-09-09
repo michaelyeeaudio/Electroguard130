@@ -26,6 +26,7 @@ from datetime import datetime
 import spidev
 import RPi.GPIO as GPIO
 from smbus import SMBus
+from os.path import exists
 
 #global str SerNumber
 bus1 = SMBus(1)
@@ -71,6 +72,7 @@ Min_V5REF = 5
 Max_M5VREF = -10
 Min_M5VREF = 10
 RmvUSB = 0
+insert_usb = 0
 repeat5 = 0
 
 #various constants
@@ -93,6 +95,7 @@ win.geometry("800x400+0+0")
 def show_xtra_but():
     InitBut.config(text="ClearFile", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(7))
     InitBut.place(x=690, y=15)
+#     SerNumBut.config(text="SerNumb", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(8))
     SerNumBut.config(text="SerNumb", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(8))
     SerNumBut.place(x=690, y=75)
 
@@ -103,21 +106,29 @@ def clr_xtra_but():
     SerNumBut.place(x=800, y=75)
 
 def chk_usb():
+    global mounted
+    global childrn_str
+    global sda_name
     # returns 0 to insert, 1 inserted not mounted, 2 ready to write
     USBcommand = "lsblk"
-    process = subprocess.run("lsblk --json -o NAME".split(), capture_output=True, text=True)    
+    lsblk_rtn = str(os.system(USBcommand))
+    process = subprocess.run("lsblk --json -o NAME,MOUNTPOINT".split(), capture_output=True, text=True)    
     blockdevices = json.loads(process.stdout)
-    str_block = str(blockdevices)
-#    print("str_block = \n", str_block)
-    if(str_block.find("sda") == 0):
+    blocknames = (blockdevices['blockdevices'])
+    childrn = blocknames[0]['children']
+    mounted = str((childrn[0]['mountpoint']))
+    childrn_str = str(childrn)
+    
+    if(mounted == "/boot"):
         return 0                         #no usb
-    if(str_block.find("sda") > 0):       #usb is inserted
-        if(str_block.find("/media/pi/") > 0):    #usb is mounted
-            return 2
-        else:   
-            return 1
-    else:
+    if(mounted == "None"):       #usb is inserted and not mounted
         return 1
+    else:       #usb is inserted and mounted
+        childrn_str = str(childrn)                       #convert list to str
+        loc1 = childrn_str.find("sda")                   #find sda1 or sda2
+        sda_name = childrn_str[loc1:loc1+4]
+        return 2
+
 
 def bcd2bin(x):
   return (((x) & 0x0f) + ((x) >> 4) * 10)
@@ -157,6 +168,15 @@ def getRTCtime():
     DateTime = "20"+(str(RTCyear)) + "-" + (str(RTCmonthB)) + "-" + (str(RTCdateB)) + " " + (str(RTChourB)) + ":" + (str(RTCminutesB)) 
     return DateTime
 
+def BCD2Num(BCDnumber, num_digits):    #number is the number you want to convert, num_digits is 2 for year, etc
+    print("BCD2Num BCD = ", BCDnumber)
+    units = (BCDnumber & 0x000F)
+    tens = (((BCDnumber & 0x00F0) >> 4) * 10)
+    print("BCD2Num TENS = ", tens)
+    print("BCD2Num units =", units)
+    number = tens + units
+    return number
+
 def read_nvram():
     global ch1gain
     global ch2gain
@@ -166,50 +186,154 @@ def read_nvram():
     global ch2offset
     global ch3offset
     global ch4offset
-    global NVSerNum
+    global sernum
     global chansel
     NVSerNum = ""
-    checksum = bus1.read_byte_data(0x6F, 0x20)
-    chansel = bus1.read_byte_data(0x6F, 0x21)
-    ch1offset = bus1.read_byte_data(0x6F, 0x22)
-    ch2offset = bus1.read_byte_data(0x6F, 0x23)
-    ch3offset = bus1.read_byte_data(0x6F, 0x24)
-    ch4offset = bus1.read_byte_data(0x6F, 0x25)
-    ch1gain = bus1.read_byte_data(0x6F, 0x26)
-    ch2gain = bus1.read_byte_data(0x6F, 0x27)
-    ch3gain = bus1.read_byte_data(0x6F, 0x28)
-    ch4gain = bus1.read_byte_data(0x6F, 0x29)
-    if(checksum != ((ch1offset + ch2offset + ch3offset + ch4offset + ch1gain + ch2gain + ch3gain + ch4gain) & 0x00FF)):
-        ch1offset = 128
-        ch2offset = 128
-        ch3offset = 128
-        ch4offset = 128
-        ch1gain = 128
-        ch2gain = 128
-        ch3gain = 128
-        ch4gain = 128
     
+    #############Reading the file#########################
+    file_exists = exists("/home/pi/Documents/ElectroguardPi/eguardsettings.txt")
+    if(file_exists):
+        with open("/home/pi/Documents/ElectroguardPi/eguardsettings.txt", "r") as cal:
+            linecnt = 0
+            for line in cal:
+                linecnt = linecnt + 1
+                if line.startswith("SerialNumber"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    sernum = line[begin+1:end-2]
+                if line.startswith("chansel"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    chansel = int(line[begin+1:end])
+                if line.startswith("SNCheckSum"):
+                    begin = line.find(" ")
+                    print("begin =", begin)
+                    end = len(line)
+                    print("end =", end)
+                    SNcksum = int(line[begin+1:end])
+                if line.startswith("CalCheckSum"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    CALcksum = int(line[begin+1:end])
+                if line.startswith("ch1offset"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch1offset = int(line[begin+1:end])
+                if line.startswith("ch1gain"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch1gain = int(line[begin+1:end])
+                if line.startswith("ch2offset"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch2offset = int(line[begin+1:end])
+                if line.startswith("ch2gain"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch2gain = int(line[begin+1:end])
+                if line.startswith("ch3offset"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch3offset = int(line[begin+1:end])
+                if line.startswith("ch3gain"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch3gain = int(line[begin+1:end])
+                if line.startswith("ch4offset"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch4offset = int(line[begin+1:end])
+                if line.startswith("ch4gain"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    ch4gain = int(line[begin+1:end])
+    print("sernum =", sernum)
+    print("chansel =", chansel)
+    print("SNcksum =", SNcksum)
+    print("CALcksum =", CALcksum)
+    print("ch1offset =", ch1offset)
+    print("ch1gain =", ch1gain)
+    print("ch2offset =", ch2offset)
+    print("ch2gain =", ch2gain)
+    print("ch3offset =", ch3offset)
+    print("ch3gain =", ch3gain)
+    print("ch4offset =", ch4offset)
+    print("ch4gain =", ch4gain)
+    
+    ################Reading RTC Clock###########################
+    RTStatus = bus1.read_byte_data(0x6F, 0x03)
+#    if((RTStatus & 0x20) == 0x20) && ((RTStatus & 0x08) == 0x08):
+#        print("oscillator is running AND battery is enabled")
+#    else:
+#        print("RTC is disabled")
+    RTyear = bus1.read_byte_data(0x6F, 0x06)
+    RTmonth = bus1.read_byte_data(0x6F, 0x05)
+    RTmonth = BCD2Num (RTmonth, 2)
+    RTdate = bus1.read_byte_data(0x6F, 0x04)
+    RTdate = BCD2Num (RTdate, 2)
+    RThour = bus1.read_byte_data(0x6F, 0x02)
+    RThour = BCD2Num ((RThour & 0x3F), 2)
+    RTminutes = bus1.read_byte_data(0x6F, 0x01)
+    RTminutes = BCD2Num (RTminutes, 2)
+    RTseconds = bus1.read_byte_data(0x6F, 0x00)
+    RTseconds = BCD2Num ((RTseconds & 0x7F), 2)
+
+    print("ser_num = ", (NVSerNum))
+    print("RTyear = ", RTyear)
+    print("RTmonth = ", RTmonth)
+    print("RTdate = ", RTdate)
+    print("RThours = ", RThour)
+    print("RTminutes = ", RTminutes)
+    print("RTSec = ", RTseconds & 0x70)
+    
+###########Calibration Constants and Configuration##########
+    RTchecksum = bus1.read_byte_data(0x6F, 0x20)
+    RTchansel = bus1.read_byte_data(0x6F, 0x21)
+    RTch1offset = bus1.read_byte_data(0x6F, 0x22)
+    RTch2offset = bus1.read_byte_data(0x6F, 0x23)
+    RTch3offset = bus1.read_byte_data(0x6F, 0x24)
+    RTch4offset = bus1.read_byte_data(0x6F, 0x25)
+    RTch1gain = bus1.read_byte_data(0x6F, 0x26)
+    RTch2gain = bus1.read_byte_data(0x6F, 0x27)
+    RTch3gain = bus1.read_byte_data(0x6F, 0x28)
+    RTch4gain = bus1.read_byte_data(0x6F, 0x29)
+    if(RTchecksum == ((RTchansel + RTch1offset + RTch2offset + RTch3offset + RTch4offset + RTch1gain + RTch2gain + RTch3gain + RTch4gain) & 0x00FF)):
+#        file_exists = exists("/home/pi/Documents/ElectroguardPi/eguardsettings.txt")
+#        if(file_exists):
+#            with open("/home/pi/Documents/ElectroguardPi/eguardsettings.txt", "r") as cal:
+        chansel = RTchansel
+        ch1offset = RTch1offset
+        ch1gain = RTch1gain
+        ch2offset = RTch2offset
+        ch2gain = RTch2gain
+        ch3offset = RTch3offset
+        ch3gain = RTch3gain
+        ch4offset = RTch4offset
+        ch4gain = RTch4gain
+        
     ser_num_len = bus1.read_byte_data(0x6F, 0x30)
     if (ser_num_len > 12):
         ser_num_len = 12
     checksum2 = bus1.read_byte_data(0x6F, 0x31)
+    sernumb_chksum = ser_num_len
     for x in range(0, ser_num_len):
         j = bus1.read_byte_data(0x6F, 0x32 + x)
-        print("j = ", chr(j))
+#        print("j = ", chr(j))
+        sernumb_chksum = j + sernumb_chksum
         NVSerNum = NVSerNum + chr(j)
-    print("ser_num = ", (NVSerNum))
+    if (checksum2 == (sernumb_chksum & 0xFF)):
+        sernumb = NVSerNum
     
-    
-    if (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
-        print("defaults")
-        ch1offset = 128
-        ch2offset = 128
-        ch3offset = 128
-        ch4offset = 128
-        ch1gain = 128
-        ch2gain = 128
-        ch3gain = 128
-        ch4gain = 128
+#     if (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
+#         print("defaults")
+#         ch1offset = 128
+#         ch2offset = 128
+#         ch3offset = 128
+#         ch4offset = 128
+#         ch1gain = 128
+#         ch2gain = 128
+#         ch3gain = 128
+#         ch4gain = 128
 
 def select(number):
     global choice
@@ -223,6 +347,7 @@ def select(number):
     global label_vis
     global RmvUSB
     global repeat5
+    global insert_usb
     
     print("prev_numb = ", prev_numb)
     print("number = ", number)
@@ -265,105 +390,101 @@ def select(number):
         return
         
     elif number == 5:
+        RTCTime = getRTCtime()
         choice = prev_choice
         if(label_vis == 0):
             label_vis = 1
+            label_2 = Label(win, text = "SerNum = " + SerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset), font="Times 12", fg="white", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="white", bg = "black")
         else:
        #     label_1.destroy()
+            label_2 = Label(win, text = "SerNum = " + SerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset), font="Times 12", fg="black", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="black", bg = "black")
             label_vis = 0
         label_1.place(x=20, y=370)
+        label_2.place(x=20, y=350)
         return
 
 #        print("I'm at 5")
     elif number == 6:
         choice = prev_choice
-#        source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-#        destination = "/home/pi/Documents/"         
-    #    destination = "/media/pi/"+dest[1]
-#        shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
         usbinserted = chk_usb()     #check to see if there is a usb inserted
         print("usbinserted = \n", usbinserted)
         
- #       if (usbinserted == 0):
         dest = os.listdir("/media/pi/")
-        print("listdir1 = ", dest)
-#         if ((len(dest) == 0) & (usbinserted == 1)):             #no usb is mounted
-#             cmd = "sudo mkdir /media/pi/usb"
-#             os.system(cmd)
-#             cmd = "sudo mount /dev/sda1 /media/pi/usb"
-#             os.system(cmd)
-#             dest = os.listdir("/media/pi/")
-#             print("listdir2 = ", dest)            
+        print("listdir1 = ", dest)    
             
         if (usbinserted == 0):             #no usb is mounted
-            print("no usb mounted")
-            print("re-insert usb")
-            SelSaveData.config(bg="yellow", activebackground="yellow",  text="(re)Insert USB")
+            insert_usb = 1
+            SelSaveData.config(bg="yellow", padx=19, activebackground="yellow",  text="(re)Insert USB")
 
         if (usbinserted == 1):             #usb inserted, not mounted
-            dest = str(os.listdir("/media/pi/"))
-            print("chk usb dest = ", dest)
-            print("type of dest = ", type(dest))
-            loc1 = dest.find('[')
-            loc2 = dest.find(']')
-            b = "sudo mkdir /media/pi/"+ dest[loc1+2:loc2-1]
-            print ("b = ", b)
-            cmd = "sudo mount /dev/sda1 /media/pi/"+ dest[loc1+2:loc2-1]
-            os.system(cmd)
-            cmd = "sudo mkdir /media/pi/"+ dest[loc1+2:loc2-1]
-            os.system(cmd)
-            usbinserted = 2
+            loc1 = childrn_str.find("sda")                   #find sda1 or sda2
+            if (loc1 > 0):
+                sda_name = childrn_str[loc1:loc1+4]
+                cmd = "sudo mount /dev/" + sda_name + " /media/pi/" + dest[0]
+                os.system(cmd)
+                cmd = "sudo mkdir /media/pi/" + dest[0]
+                os.system(cmd)
+                usbinserted = 2           #if usbinserted==1 but no location
 
         if (usbinserted == 2):
-            dest = str(os.listdir("/media/pi/"))
+            
+            dest = os.listdir("/media/pi/")
             print("listdir3 = ", dest)
-            loc1 = dest.find('[')
-            loc2 = dest.find(']')
-            print("loc1 = ", loc1)
-            print("loc2 = ", loc2)
-            newname = SerNum
+#            newname = str(SerNum)
+            newname = str(sernum)
             Type = type(newname)
             print ("Serial Numb = ", newname)
             print("Type = ",Type)            
 #first the big data file            
-#            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-#            destination = "/home/pi/Documents/"
-#            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
+            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
+            destination = "/home/pi/Documents/"
+            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
+#            shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
 #            destination = "/media/pi/dest"
             
 #            print("dest", dest[loc1+1:loc2])
 #           shutil.copy(source, destination)            #copy Electroguard.txt into /media/pi/+dest[0]
             RTCTime = getRTCtime()
-            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/" + newname +"_" + RTCTime[0:10] +".txt")
+            os.rename("/home/pi/Documents/Electroguard.txt", "/home/pi/Documents/" + newname +"_" + RTCTime[0:10] +".txt")
 #            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/test1.txt")
             source = "/home/pi/Documents/"+newname+"_" + RTCTime[0:10] +".txt"
-            destination = "/media/pi/" + dest[loc1+2:loc2-1]
+            destination = "/media/pi/" + dest[0]
             print("1 destination =", destination)
             print("1 source =", source)
-            shutil.copy(source, destination)              #writes to Flash Memory
+            try:
+                shutil.copy(source, destination)              #writes to Flash Memory
+            except PermissionError:
+                shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
             
 #second the small data file
-            p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
-            if (p.find('/home/pi/Documents/ElectroguardPi/diags.txt')>0):
+#            p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
+            file_exists = exists('/home/pi/Documents/ElectroguardPi/diags.txt')
+            if (file_exists == True):
+#            if (p.find('/home/pi/Documents/ElectroguardPi/diags.txt')>0):
                source = "/home/pi/Documents/ElectroguardPi/diags.txt"
                destination = "/home/pi/Documents/"
                shutil.copy(source, destination)            #copy Electroguard.txt into /Document
                os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".txt")
                source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".txt"
-               destination = "/media/pi/" + dest[loc1+2:loc2-1]
+               destination = "/media/pi/" + dest[0]
                SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
-               shutil.copy(source, destination)              #writes to Flash Memory
+               try:
+                   shutil.copy(source, destination)              #writes to Flash Memory
+               except PermissionError:
+                   shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
             
             os.system("sync")
-            time.sleep(.5)
+            time.sleep(1)
 #            SelSaveData.delete()
-            SelSaveData.config(bg="yellow", activebackground="yellow",  text="Saving Data")
-                
-            cmd = "sudo umount /dev/sda1"
+            SelSaveData.config(bg="yellow", padx = 19, activebackground="yellow",  text="Saving Data")
+            loc1 = childrn_str.find("sda")                   #find sda1 or sda2
+            sda_name = childrn_str[loc1:loc1+4]
+            print("sda_name =  ", sda_name)    
+            cmd = "sudo umount /dev/" + sda_name
             os.system(cmd)
-            SelSaveData.config(bg="green", padx=15, activebackground="green",  text="Remove USB")
+            SelSaveData.config(bg="green", padx=19, activebackground="green",  text="Remove USB")
             RmvUSB = 1
 
     elif number == 7:
@@ -395,21 +516,7 @@ def select(number):
 #        number = 1
         return
 
-# def ReadSerNum(SerNumLen):
-#     SerNum
-#     SerialNum
-#     checksum2 = int(bus1.read_byte_data(0x6F, 0x31))
-#     checksum3 = 0
-#     for x in range (0, SerNumLen):
-#         a = (bus1.read_byte_data(0x6F, 0x31 + x))
-#         SerialNum[x] = str(a)
-#         checksum3 = checksum3 + a
-#     if(checksum2 == checksum3):
-#         SerNum = SerialNum
-#     else:
-#         SerNum = "NoSerNum"
-#     return SerNum
-# get and set the Pi clock
+
 RTCTime = getRTCtime()
 #os.system('sudo hwclock --set --date 2022-02-28')
 
@@ -428,7 +535,7 @@ for x in range (0, SerNumLen):
 if(checksum2 == (checksum3 & 0x00ff)):
     SerNum = SerialNum
 else:
-    SerNum = 00000000
+    SerNum = "00000000"
     BadCheckSum = 1
 #print(SerialNum)
 #print("SerNumber = ", SerNum)
@@ -498,6 +605,8 @@ def get_adcs():
     global ButtCol3
     global ButtCol4
     global RmvUSB
+    global insert_usb
+    
     # CE goes low, conversion of CH0
     GPIO.output(ADC_CS,GPIO.LOW)
     msg = [0x06]
@@ -633,7 +742,10 @@ def get_adcs():
        if (RmvUSB == 1):
            RmvUSB = 0
            print("change button color \n")
-           SelSaveData.config(fg="black", bg="#D0D1AB", padx=15, activebackground="#D0D1AB",  text="Save Data")
+           SelSaveData.config(fg="black", bg="#D0D1AB", padx=19, activebackground="#D0D1AB",  text="Save Data")
+    if((DEV_PRES == 1) and (insert_usb == 1)):
+        insert_usb = 0;
+        select(6)
     
 #print("+5Vraw = ", (((V5_raw[1] & 0x0F)<<8) + V5_raw[2]))
 #    print("CH0 = %3.3f, CH1 = %3.3f,  CH2 = %3.3f, CH3 = %3.3f, +5V = %3.3f,   2.5V = %3.3f   " % (CH0, CH1, CH2, CH3, V5REF, mv2500))

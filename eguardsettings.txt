@@ -1,0 +1,12 @@
+SerialNumber lkjh0987
+chansel 15
+SNCheckSum 137
+CalCheckSum 48
+ch1offset 135
+ch1gain 128
+ch2offset 133
+ch2gain 131
+ch3offset 135
+ch3gain 128
+ch4offset 139
+ch4gain 128

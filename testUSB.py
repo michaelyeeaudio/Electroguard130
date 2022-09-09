@@ -13,9 +13,16 @@ from datetime import datetime
 
 def chk_usb():
     # returns 0 to insert, 1 to re-insert, 2 ready to write
-    USBcommand = "lsblk"
+#    command = "lsblk -f --json | grep sd"
+#    command = "lsblk -f --json"
+#    USBcommand = "lsblk -f | grep sda"
+#    lsblk_rtn = os.system(command)
+#    print("data type = ", lsblk_rtn)
+#    print("ls -d = ",lsblk_rtn)
+#    USBcommand = "lsblk"
     process = subprocess.run("lsblk --json -o NAME".split(), capture_output=True, text=True)    
     blockdevices = json.loads(process.stdout)
+    print(blockdevices)
     str_block = str(blockdevices)
     print("str_block = \n", str_block)
     loc_sd0 = str_block.find("'children': [{'name':")
@@ -24,6 +31,7 @@ def chk_usb():
     print("SDx = ", SDx)
     print("\n")
     print("SDx type =", type(SDx))
+    pos = str_block.find("sd") 
     if(str_block.find("sd") == 0):
         return 0                         #no usb
     if(str_block.find("sd") > 0):       #usb is inserted
@@ -35,6 +43,9 @@ def chk_usb():
             print("type of dest = ", type(dest))
             loc1 = dest.find('[')
             loc2 = dest.find(']')
+            USBcommand = "ls -d */"
+            lsblk_rtn = str(os.system(USBcommand))
+            print("ls -d = ",lsblk_rtn)
             b = "sudo mkdir /media/pi/"+ dest[loc1+2:loc2-1]
             print ("b0 = ", b)
             b = 'sudo mount /dev/'+ SDx    # ' /media/pi/'    #+ dest[loc1+2:loc2-1]

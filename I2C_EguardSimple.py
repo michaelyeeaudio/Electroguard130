@@ -70,5 +70,15 @@ bus1.write_byte_data(0x6F, 0x28, ch3gain)   #write Ch3offset
 bus1.write_byte_data(0x6F, 0x25, ch4offset)   #write Ch4offset
 bus1.write_byte_data(0x6F, 0x29, ch4gain)   #write Ch4offset
 
+fout = open('/home/pi/Documents/ElectroguardPi/eguardsettings.txt', 'r')
+replacement = ""
+# using the for loop
+for line in fout:
+    if line.startswith('ch1offset'):
+        print(line)
+#    changes = line.replace("hardships", "situations")
+#    replacement = replacement + changes + "\n"
+
+fout.close()
 time.sleep(.001)
 bus1.close()
