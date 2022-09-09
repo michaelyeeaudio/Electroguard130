@@ -1,3 +1,12 @@
+# invalid checksums for gain and configuration
+# make sure configurations work
+# 6 time EGuard button for system functions
+# filenames from non-vol
+# addition functions, clear
+# make zip files
+# what clock is used when
+# check Flash drive mounted
+
 #!/usr/bin/env python3
 import os
 import shutil
@@ -62,6 +71,7 @@ Min_V5REF = 5
 Max_M5VREF = -10
 Min_M5VREF = 10
 RmvUSB = 0
+repeat5 = 0
 
 #various constants
 ButtCol1 = "white"
@@ -80,23 +90,34 @@ win = tk.Tk()
 #win.attributes('-fullscreen',True)
 win.geometry("800x400+0+0")
 
+def show_xtra_but():
+    InitBut.config(text="ClearFile", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(7))
+    InitBut.place(x=690, y=15)
+    SerNumBut.config(text="SerNumb", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(8))
+    SerNumBut.place(x=690, y=75)
+
+def clr_xtra_but():
+    InitBut.config(text="", padx=0, pady=0, fg="black", bg="black", activebackground="black")
+    InitBut.place(x=800, y=15)
+    SerNumBut.config(text="", padx=0, pady=0, fg="black", bg="black", activebackground="black")
+    SerNumBut.place(x=800, y=75)
+
 def chk_usb():
+    # returns 0 to insert, 1 inserted not mounted, 2 ready to write
     USBcommand = "lsblk"
     process = subprocess.run("lsblk --json -o NAME".split(), capture_output=True, text=True)    
     blockdevices = json.loads(process.stdout)
     str_block = str(blockdevices)
 #    print("str_block = \n", str_block)
-    if(str_block.find("sda") > 0):
-        dest = os.listdir("/media/pi/")
-#        print("chk usb dest = \n", dest)
-        if (len(dest) == 0):             #no usb is mounted
-#             cmd = "sudo mkdir /media/pi/usb"
-#             os.system(cmd)
-#             cmd = "sudo mount /dev/sda1 /media/pi/usb"
-#             os.system(cmd)   
+    if(str_block.find("sda") == 0):
+        return 0                         #no usb
+    if(str_block.find("sda") > 0):       #usb is inserted
+        if(str_block.find("/media/pi/") > 0):    #usb is mounted
+            return 2
+        else:   
             return 1
     else:
-        return 0
+        return 1
 
 def bcd2bin(x):
   return (((x) & 0x0f) + ((x) >> 4) * 10)
@@ -158,14 +179,25 @@ def read_nvram():
     ch2gain = bus1.read_byte_data(0x6F, 0x27)
     ch3gain = bus1.read_byte_data(0x6F, 0x28)
     ch4gain = bus1.read_byte_data(0x6F, 0x29)
+    if(checksum != ((ch1offset + ch2offset + ch3offset + ch4offset + ch1gain + ch2gain + ch3gain + ch4gain) & 0x00FF)):
+        ch1offset = 128
+        ch2offset = 128
+        ch3offset = 128
+        ch4offset = 128
+        ch1gain = 128
+        ch2gain = 128
+        ch3gain = 128
+        ch4gain = 128
+    
     ser_num_len = bus1.read_byte_data(0x6F, 0x30)
     if (ser_num_len > 12):
         ser_num_len = 12
     checksum2 = bus1.read_byte_data(0x6F, 0x31)
     for x in range(0, ser_num_len):
         j = bus1.read_byte_data(0x6F, 0x32 + x)
-        NVSerNum = NVSerNum + str(j)
-    print("ser_num = ", NVSerNum)
+        print("j = ", chr(j))
+        NVSerNum = NVSerNum + chr(j)
+    print("ser_num = ", (NVSerNum))
     
     
     if (checksum != (chansel+ch1offset+ch2offset+ch3offset+ch4offset+ch1gain+ch2gain+ch3gain+ch4gain) & 0x000000FF):
@@ -186,10 +218,23 @@ def select(number):
     global SelChan3
     global SelChan4
     prev_choice = choice
+    prev_numb = number
     choice = number
     global label_vis
     global RmvUSB
+    global repeat5
     
+    print("prev_numb = ", prev_numb)
+    print("number = ", number)
+    if ((prev_numb == 5) and (number == 5)):
+        repeat5 = repeat5 + 1
+        print("repeat5 = ", repeat5)
+    if ((prev_numb == 5) and (number == 5) and (repeat5 == 6)):
+        show_xtra_but()
+        
+    if (repeat5 > 6):
+        repeat5 = 0
+        clr_xtra_but()
     
     if number == 1:
         SelChan1.config(bg="#00A0E3", activebackground="#00A0E3")
@@ -234,51 +279,82 @@ def select(number):
 #        print("I'm at 5")
     elif number == 6:
         choice = prev_choice
-        source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-        destination = "/home/pi/Documents/"         
+#        source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
+#        destination = "/home/pi/Documents/"         
     #    destination = "/media/pi/"+dest[1]
-        shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
-   #    usbinserted = chk_usb()     #check to see if there is a usb inserted
-   #     print("usbinserted = \n", usbinserted) 
-   
-   #if (usbinserted == 0):
+#        shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
+        usbinserted = chk_usb()     #check to see if there is a usb inserted
+        print("usbinserted = \n", usbinserted)
+        
+ #       if (usbinserted == 0):
         dest = os.listdir("/media/pi/")
-        if (len(dest) == 0):             #no usb is mounted
+        print("listdir1 = ", dest)
+#         if ((len(dest) == 0) & (usbinserted == 1)):             #no usb is mounted
+#             cmd = "sudo mkdir /media/pi/usb"
+#             os.system(cmd)
+#             cmd = "sudo mount /dev/sda1 /media/pi/usb"
+#             os.system(cmd)
+#             dest = os.listdir("/media/pi/")
+#             print("listdir2 = ", dest)            
+            
+        if (usbinserted == 0):             #no usb is mounted
             print("no usb mounted")
             print("re-insert usb")
             SelSaveData.config(bg="yellow", activebackground="yellow",  text="(re)Insert USB")
-        else:      
+
+        if (usbinserted == 1):             #usb inserted, not mounted
             dest = str(os.listdir("/media/pi/"))
+            print("chk usb dest = ", dest)
+            print("type of dest = ", type(dest))
+            loc1 = dest.find('[')
+            loc2 = dest.find(']')
+            b = "sudo mkdir /media/pi/"+ dest[loc1+2:loc2-1]
+            print ("b = ", b)
+            cmd = "sudo mount /dev/sda1 /media/pi/"+ dest[loc1+2:loc2-1]
+            os.system(cmd)
+            cmd = "sudo mkdir /media/pi/"+ dest[loc1+2:loc2-1]
+            os.system(cmd)
+            usbinserted = 2
+
+        if (usbinserted == 2):
+            dest = str(os.listdir("/media/pi/"))
+            print("listdir3 = ", dest)
             loc1 = dest.find('[')
             loc2 = dest.find(']')
             print("loc1 = ", loc1)
             print("loc2 = ", loc2)
             newname = SerNum
+            Type = type(newname)
+            print ("Serial Numb = ", newname)
+            print("Type = ",Type)            
 #first the big data file            
-            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-            destination = "/home/pi/Documents/"
-            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
+#            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
+#            destination = "/home/pi/Documents/"
+#            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
 #            destination = "/media/pi/dest"
             
-            print("dest", dest[loc1+1:loc2])
+#            print("dest", dest[loc1+1:loc2])
 #           shutil.copy(source, destination)            #copy Electroguard.txt into /media/pi/+dest[0]
             RTCTime = getRTCtime()
-            os.rename("/home/pi/Documents/Electroguard.txt", "/home/pi/Documents/" + newname +"_" + RTCTime[0:10] +".txt")
-            source = "/home/pi/Documents/"+ newname +"_" + RTCTime[0:10] +".txt"
+            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/" + newname +"_" + RTCTime[0:10] +".txt")
+#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/test1.txt")
+            source = "/home/pi/Documents/"+newname+"_" + RTCTime[0:10] +".txt"
             destination = "/media/pi/" + dest[loc1+2:loc2-1]
             print("1 destination =", destination)
             print("1 source =", source)
             shutil.copy(source, destination)              #writes to Flash Memory
             
-#second the small data file            
-            source = "/home/pi/Documents/ElectroguardPi/diags.txt"
-            destination = "/home/pi/Documents/"
-            shutil.copy(source, destination)            #copy Electroguard.txt into /Document
-            os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".txt")
-            source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".txt"
-            destination = "/media/pi/" + dest[loc1+2:loc2-1]
-            SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
-            shutil.copy(source, destination)              #writes to Flash Memory
+#second the small data file
+            p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
+            if (p.find('/home/pi/Documents/ElectroguardPi/diags.txt')>0):
+               source = "/home/pi/Documents/ElectroguardPi/diags.txt"
+               destination = "/home/pi/Documents/"
+               shutil.copy(source, destination)            #copy Electroguard.txt into /Document
+               os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".txt")
+               source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".txt"
+               destination = "/media/pi/" + dest[loc1+2:loc2-1]
+               SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
+               shutil.copy(source, destination)              #writes to Flash Memory
             
             os.system("sync")
             time.sleep(.5)
@@ -289,7 +365,28 @@ def select(number):
             os.system(cmd)
             SelSaveData.config(bg="green", padx=15, activebackground="green",  text="Remove USB")
             RmvUSB = 1
-                 
+
+    elif number == 7:
+        choice = prev_choice
+        p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
+        print("listdir = ",p)
+        if (p.find('Electroguard.txt')>0):
+            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
+        if (p.find('diags.txt')>0):
+            os.remove("/home/pi/Documents/ElectroguardPi/diags.txt")
+        repeat5 = 0
+        clr_xtra_but()
+        return
+    
+    elif number == 8:
+        choice = prev_choice
+        p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
+        print("listdir = ",p)
+        if (p.find('Electroguard.txt')>0):
+            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
+        repeat5 = 0
+        clr_xtra_but()
+        return
     else :
 #        SelChan1.config(bg="green")
 #        SelChan2.config(bg="white")
@@ -318,9 +415,11 @@ RTCTime = getRTCtime()
 
 #GET SERIALNUMBER FROM RTC
 SerNumLen = int(bus1.read_byte_data(0x6F, 0x30))
+if (SerNumLen >12):
+    SerNumLen = 12
 #SerNumber = ReadSerNum(SerNumLen)
 checksum2 = int(bus1.read_byte_data(0x6F, 0x31))
-checksum3 = 0
+checksum3 = SerNumLen
 SerialNum = ""
 for x in range (0, SerNumLen):
     a = (bus1.read_byte_data(0x6F, 0x32 + x))
@@ -328,6 +427,9 @@ for x in range (0, SerNumLen):
     checksum3 = checksum3 + a
 if(checksum2 == (checksum3 & 0x00ff)):
     SerNum = SerialNum
+else:
+    SerNum = 00000000
+    BadCheckSum = 1
 #print(SerialNum)
 #print("SerNumber = ", SerNum)
 # else:
@@ -348,26 +450,30 @@ img2 = PhotoImage(file = "/home/pi/Documents/ElectroguardPi/EGuardLogoSm.PNG")
 #button_0 = Button(win, text="Chan1", padx=40, pady=20, command=button_add)
 #CH0Label.grid(row=0, column=0)
 StatBut1 = Button(win, text="", padx=5, pady=1, fg="#00A0E3", bg="#00A0E3", activebackground="green")
-StatBut1.place(x=600, y=29)
+StatBut1.place(x=550, y=29)
 SelChan1 = Button(win, text="Channel 1", padx=20, pady=15, fg="black", bg="#00A0E3", activebackground="#00A0E3", command=lambda: select(1))
-SelChan1.place(x=625, y=15)
+SelChan1.place(x=575, y=15)
 StatBut2 = Button(win, text="", padx=5, pady=1, fg="black", bg="#00A0E3", activebackground="#00A0E3")
-StatBut2.place(x=600, y=89)
+StatBut2.place(x=550, y=89)
 SelChan2 = Button(win, text="Channel 2", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(2))
-SelChan2.place(x=625, y=75)
+SelChan2.place(x=575, y=75)
 StatBut3 = Button(win, text="", padx=5, pady=1, fg="green", bg="green", activebackground="green")
-StatBut3.place(x=600, y=149)
+StatBut3.place(x=550, y=149)
 SelChan3 = Button(win, text="Channel 3", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(3))
-SelChan3.place(x=625, y=135)
+SelChan3.place(x=575, y=135)
 StatBut4 = Button(win, text="", padx=5, pady=1, fg="green", bg="green", activebackground="green")
-StatBut4.place(x=600, y=209)
+StatBut4.place(x=550, y=209)
 SelChan4 = Button(win, text="Channel 4", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(4))
-SelChan4.place(x=625, y=195)
+SelChan4.place(x=575, y=195)
 SelSaveData= Button(win, text="Save Data", padx=19, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(6))
-SelSaveData.place(x=625, y=255)
+SelSaveData.place(x=575, y=255)
 SelEGuardButt = Button(win, image = img2, padx=15, pady=15, command=lambda: select(5))
-SelEGuardButt.place(x=618, y=315)
+SelEGuardButt.place(x=573, y=315)
 
+InitBut = Button(win, text="", padx=0, pady=0, fg="black", bg="black", activebackground="black")  #, command=lambda: select(7))
+InitBut.place(x=800, y=358)
+SerNumBut = Button(win, text="", padx=0, pady=0, fg="black", bg="black", activebackground="black")  #, command=lambda: select(7))
+SerNumBut.place(x=800, y=258)
 
 a5 = PhotoImage(file="/home/pi/Documents/ElectroguardPi/g2.png")
 win.tk.call('wm', 'iconphoto', win._w, a5)

@@ -1,4 +1,4 @@
-#TimeSerNum.py:
+#TimeSerNum2.py:
 #   - looks at current time
 #   - Checks to see if date/time is correct
 #   - if not, enters date/time, programs date/time
@@ -31,6 +31,8 @@ def Num2BCD(number):    #number is the number you want to convert, num_digits is
 
 bus1 = SMBus(1)
 RTCyear = bcd2bin(bus1.read_byte_data(0x6F, 0x06))
+print ("year =", RTCyear)
+print(type(RTCyear))
 RTCmonth = bcd2bin(bus1.read_byte_data(0x6F, 0x05) & 0x1F)
 RTCdate = bcd2bin(bus1.read_byte_data(0x6F, 0x04) & 0x3F)
 RTChour = bcd2bin(bus1.read_byte_data(0x6F, 0x02) & 0x3F)
@@ -38,10 +40,10 @@ RTCminutes = bcd2bin (bus1.read_byte_data(0x6F, 0x01) & 0x7F)
 status = bus1.read_byte_data(0x6F, 0x00)
 print("status = ", status)
 
-print ("%02d:%02d:%02d:%02d:%02d" % (RTCyear, RTCmonth, RTCdate, RTChour, RTCminutes))
+print ("RTC= %02d:%02d:%02d:%02d:%02d" % (RTCyear, RTCmonth, RTCdate, RTChour, RTCminutes))
 #d = date.today()
 t = str(datetime.now())
-print(t)
+print("PiTime = ", t)
 year = int(t[0:4])
 month = int(t[5:7])
 day = int(t[8:10])
@@ -94,6 +96,8 @@ bus1.write_byte_data(0x6F, 0x04, BCDday)
 bus1.write_byte_data(0x6F, 0x02, BCDhour)
 bus1.write_byte_data(0x6F, 0x01, BCDminutes)
 bus1.write_byte_data(0x6F, 0x03, 0x08)   #Turn on battery
+checksum3 = ((BCDyear + BCDmonth + BCDday + BCDhour + BCDminutes) & 0x00FF)
+bus1.write_byte_data(0x6F, 0x2A, BCDminutes)
 
 RTCyear = bcd2bin(bus1.read_byte_data(0x6F, 0x06))
 RTCmonth = bcd2bin(bus1.read_byte_data(0x6F, 0x05) & 0x1F)
@@ -116,4 +120,5 @@ for x in range (0, ser_num_len):
     print(RTCsernum[x])
     bus1.write_byte_data(0x6F, 0x32 + x, ord(RTCsernum[x]))
     checksum2 = checksum2 + ord(RTCsernum[x])
+checksum2 = checksum2 + ser_num_len
 bus1.write_byte_data(0x6F, 0x31, checksum2 & 0x000000ff)

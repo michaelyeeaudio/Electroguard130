@@ -50,7 +50,7 @@ class DrawGauge2(ini):
                  bg_col:str='blue',unit: str=None,bg_sel=1,
                  **options):
         super().__init__(parent, size=size, **options)
-#        print("DrawGauge2")
+
         self.max_value = float(max_value)
         self.min_value = float(min_value)
         self.size = size
@@ -68,7 +68,6 @@ class DrawGauge2(ini):
         self.set_value(initial_value)
         
     def draw_background1(self, divisions=100):
-#        print("draw background1")
         self.canvas.create_arc(self.size/50, self.size/50, self.size-self.size/50, self.size-self.size/50,
                        style="arc",width=4,start=-61, extent=300,
                        outline = "gray")#style=tk.PIESLICE
@@ -87,45 +86,36 @@ class DrawGauge2(ini):
         
     def draw_background2(self, divisions=100):
         self.canvas.create_arc(self.size/5, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               style="arc",width=self.size/10,start=30, extent=36,
-#                               style="arc",width=self.size/10,start=-61, extent=61,
+                               style="arc",width=self.size/10,start=-61, extent=61,
                                outline = "red")#style=tk.PIESLICE
         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               style="arc",width=self.size/10,start=65, extent=61,
-#                               width=self.size/10,style="arc", start=0, extent=60,
-                               outline = "green")
+                               width=self.size/10,style="arc", start=0, extent=60,
+                               outline = "orange")
         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               width=self.size/10,style="arc",start=127, extent=10,
-#                               width=self.size/10,style="arc",start=60, extent=60,
+                               width=self.size/10,style="arc",start=60, extent=60,
                                outline = "yellow")
-#         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-#                                width=self.size/10,style="arc",start=120, extent=60,
-#                                outline = "light green")
         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               width=self.size/10,style="arc",start=137, extent=13,
-#                               width=self.size/10,style="arc",start=180, extent=60,
-                               outline = "red")
-        self.readout = self.canvas.create_text(self.size/5,.9*self.size/4, font=("Arial",int(self.size/30),'bold'),fill="white", text='over',angle=50)
-        self.readout = self.canvas.create_text(.79*self.size,0.85*self.size/4, font=("Arial",int(self.size/30),'bold'),fill="white", text='under',angle=-50)
-        self.readout = self.canvas.create_text(.5*self.size,.09*self.size, font=("Arial",int(self.size/30),'bold'),fill="white", text='safe',angle=0)
+                               width=self.size/10,style="arc",start=120, extent=60,
+                               outline = "light green")
+        self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
+                               width=self.size/10,style="arc",start=180, extent=60,
+                               outline = "green")
+        self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="white", text='')
         
-    def draw_tick(self,divisions=50):
-#    def draw_tick(self,divisions=100):
+    def draw_tick(self,divisions=100):
         inner_tick_radius = int((self.size-self.size/9) * 0.35)
         outer_tick_radius = int((self.size-self.size/9) * 0.45)
         label = self.unit
-        self.canvas.create_text(self.size/2,1.8*self.size/3, font=("Arial",int(self.size/24)),fill="white", text=label,angle=0)
-        label = 'Protection Level'
-        self.canvas.create_text(self.size/2,self.size/30, font=("Arial",int(self.size/24),'bold'),fill="light blue", text=label,angle=0)
-#        self.canvas.create_text(self.size/2,3*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="light blue", text=label,angle=0)
-        self.readout = self.canvas.create_text(self.size/2,3*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="white", text='')
+        self.canvas.create_text(self.size/2,2*self.size/5, font=("Arial",int(self.size/20)),fill="white", text=label,angle=0)
+        label = 'Electroguard'
+        self.canvas.create_text(self.size/2,3*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="light blue", text=label,angle=0)
+        self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="white", text='')
         inner_tick_radius2 = int((self.size-self.size/9) * 0.48)
         outer_tick_radius2 = int((self.size-self.size/9) * 0.50)
-        inner_tick_radius3 = int((self.size-self.size/9) * 0.3)
-        outer_tick_radius3 = int((self.size-self.size/9) * 0.35)
+        inner_tick_radius3 = int((self.size-self.size/9) * 0.35)
+        outer_tick_radius3 = int((self.size-self.size/9) * 0.40)
         for tick in range(divisions+1):
-            angle_in_radians = (14 * cmath.pi / 12.0)+ (2 * tick/divisions * (cmath.pi / 3.0))
-#            print("angle = ", angle_in_radians)
+            angle_in_radians = (2.0 * cmath.pi / 3.0)+tick/divisions * (5.0 * cmath.pi / 3.0)
             inner_point = cmath.rect(inner_tick_radius, angle_in_radians)
             outer_point = cmath.rect(outer_tick_radius, angle_in_radians)
             if (tick%10) == 0:
@@ -134,35 +124,28 @@ class DrawGauge2(ini):
                     *self.to_absolute(outer_point.real, outer_point.imag),
                     width=2,fill='blue')
             else:
-#                print("tick%10 else")
                 inner_point3 = cmath.rect(inner_tick_radius3, angle_in_radians)
                 outer_point3 = cmath.rect(outer_tick_radius3, angle_in_radians)
                 self.canvas.create_line(
                     *self.to_absolute(inner_point3.real, inner_point3.imag),
                     *self.to_absolute(outer_point3.real, outer_point3.imag),
                     width=1,fill='black')
-#             if (tick%100) == 0:
-#                 inner_point2 = cmath.rect(inner_tick_radius2, angle_in_radians)
-#                 outer_point2 = cmath.rect(outer_tick_radius2, angle_in_radians)
-#                 x= outer_point2.real + self.size/2
-#                 y= outer_point2.imag + self.size/2
-#            #     label = str(int(self.min_value + tick * (self.max_value-self.min_value)/100))
-#                 label = str(float(self.min_value + tick * (self.max_value-self.min_value)/100))
-#                 self.canvas.create_text(x,y, font=("Arial",int(self.size/25)),fill="white", text=label)   #these are the numbers around the edge
-#                 
+            if (tick%10) == 0:
+                inner_point2 = cmath.rect(inner_tick_radius2, angle_in_radians)
+                outer_point2 = cmath.rect(outer_tick_radius2, angle_in_radians)
+                x= outer_point2.real + self.size/2
+                y= outer_point2.imag + self.size/2
+                label = str(int(self.min_value + tick * (self.max_value-self.min_value)/100))
+                self.canvas.create_text(x,y, font=("Arial",int(self.size/25)),fill="white", text=label)
+                
     def set_value(self, number: (float, int)):
-#        print("set_value")
-        org_number = number
         number = number if number <= self.max_value else self.max_value
         number = number if number > self.min_value else self.min_value
-#        degree = 30.0 + (number- self.min_value) / (self.max_value - self.min_value) * 300.0
-        degree = 120 + ((number- self.min_value) / (self.max_value - self.min_value) * 120.0)
-#        degree = 180 is up 0 is down
+        degree = 30.0 + (number- self.min_value) / (self.max_value - self.min_value) * 300.0
         draw_dial(self.canvas,self.size/2,self.size/2,-1*degree,self.size/3,8)
-#        print("number = \n", number)
-        label = str('%.3f' % (org_number/1000))
+        label = str('%.2f' % number)
         self.canvas.delete(self.readout)
-        self.readout = self.canvas.create_text(self.size/2,3.3*self.size/6, font=("Arial",int(self.size/24)),fill="white", text=label,angle=0)
+        self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/14),'bold'),fill="white", text=label,angle=0)
 
 class DrawGauge3(ini):
     def __init__(self, parent,
@@ -173,7 +156,7 @@ class DrawGauge3(ini):
                  bg_col:str='blue',unit: str=None,bg_sel=1,
                  **options):
         super().__init__(parent, size=size, **options)
-        print("DrawGauge3")
+
         self.max_value = float(max_value)
         self.min_value = float(min_value)
         self.size = size
@@ -191,7 +174,6 @@ class DrawGauge3(ini):
         self.set_value(initial_value)
     
     def draw_background1(self, divisions=100):
-#        print("background1")
         self.canvas.create_arc(self.size/50, self.size/50, self.size-self.size/50, self.size-self.size/50,
                        style="arc",width=4,start=0, extent=180,
                        outline = "gray")#style=tk.PIESLICE
@@ -211,7 +193,6 @@ class DrawGauge3(ini):
         self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="white", text='')
     
     def draw_background2(self, divisions=100):
-#        print("background2")
         self.canvas.create_arc(self.size/7, self.size/7, self.size-self.size/7, self.size-self.size/7,
                                style="arc",width=self.size/9,start=0, extent=60,
                                outline = "orange")#style=tk.PIESLICE
@@ -225,13 +206,12 @@ class DrawGauge3(ini):
         self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="white", text='')
 
     def draw_tick(self, divisions=100):
-#        print("Draw_Tick")
         inner_tick_radius = int((self.size-self.size/9) * 0.35)
         outer_tick_radius = int((self.size-self.size/9) * 0.45)
         label = self.unit
-        self.canvas.create_text(self.size/2,3*self.size/10, font=("Arial",int(self.size/28)),fill="red", text=label,angle=0)
-#        label = 'Ardiotech'
-#        self.canvas.create_text(self.size/2,4*self.size/10, font=("Arial",int(self.size/18),'bold'),fill="light blue", text=label,angle=0)
+        self.canvas.create_text(self.size/2,3*self.size/10, font=("Arial",int(self.size/20)),fill="red", text=label,angle=0)
+        label = 'Ardiotech'
+        self.canvas.create_text(self.size/2,4*self.size/10, font=("Arial",int(self.size/18),'bold'),fill="light blue", text=label,angle=0)
         self.readout = self.canvas.create_text(self.size/2,4*self.size/5, font=("Arial",int(self.size/18),'bold'),fill="dark blue", text='')
         inner_tick_radius2 = int((self.size-self.size/9) * 0.48)
         outer_tick_radius2 = int((self.size-self.size/9) * 0.50)
@@ -264,7 +244,6 @@ class DrawGauge3(ini):
                 label = str(int(self.min_value + tick * (self.max_value-self.min_value)/100))
                 self.canvas.create_text(x,y, font=("Arial",int(self.size/25)),fill="white", text=label)
     def set_value(self, number: (float, int)):
-#        print("set_value")
         number = number if number <= self.max_value else self.max_value
         number = number if number > self.min_value else self.min_value
         degree = 90.0 + (number- self.min_value) / (self.max_value - self.min_value) * 180.0
