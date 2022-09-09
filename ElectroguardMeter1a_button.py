@@ -27,6 +27,7 @@ import spidev
 import RPi.GPIO as GPIO
 from smbus import SMBus
 from os.path import exists
+import zipfile
 
 #global str SerNumber
 bus1 = SMBus(1)
@@ -438,18 +439,26 @@ def select(number):
             print ("Serial Numb = ", newname)
             print("Type = ",Type)            
 #first the big data file            
-            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-            destination = "/home/pi/Documents/"
-            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
+#            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
+#            destination = "/home/pi/Documents/"
+#            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
 #            shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
 #            destination = "/media/pi/dest"
             
 #            print("dest", dest[loc1+1:loc2])
 #           shutil.copy(source, destination)            #copy Electroguard.txt into /media/pi/+dest[0]
+            
             RTCTime = getRTCtime()
-            os.rename("/home/pi/Documents/Electroguard.txt", "/home/pi/Documents/" + newname +"_" + RTCTime[0:10] +".txt")
+            NewFileName =newname +"_" + RTCTime[0:10]
+            NewFileNameZip = NewFileName + ".zip"
+            shutil.copyfile("Electroguard.txt", NewFileName + ".txt")
+            with zipfile.ZipFile(NewFileNameZip, "w", compression=zipfile.ZIP_DEFLATED) as newzip:
+                newzip.write(NewFileName + ".txt")
+            
+#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.zip", newname +"_" + RTCTime[0:10] +".zip")
+#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.zip", newname +"_" + RTCTime[0:10] +".zip")
 #            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/test1.txt")
-            source = "/home/pi/Documents/"+newname+"_" + RTCTime[0:10] +".txt"
+            source = "/home/pi/Documents/ElectroguardPi/" + NewFileNameZip
             destination = "/media/pi/" + dest[0]
             print("1 destination =", destination)
             print("1 source =", source)
@@ -460,20 +469,22 @@ def select(number):
             
 #second the small data file
 #            p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
-            file_exists = exists('/home/pi/Documents/ElectroguardPi/diags.txt')
+            file_exists = exists('diags.txt')
             if (file_exists == True):
 #            if (p.find('/home/pi/Documents/ElectroguardPi/diags.txt')>0):
-               source = "/home/pi/Documents/ElectroguardPi/diags.txt"
-               destination = "/home/pi/Documents/"
-               shutil.copy(source, destination)            #copy Electroguard.txt into /Document
-               os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".txt")
-               source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".txt"
-               destination = "/media/pi/" + dest[0]
+#               source = "diags.txt"
+#               destination = "/home/pi/Documents/"
+#               shutil.copy(source, destination)            #copy Electroguard.txt into /Document
+               with zipfile.ZipFile(NewFileName + "diags.zip", "w", compression=zipfile.ZIP_DEFLATED) as newzip:
+                  newzip.write("diags.txt")
+#               os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".zip")
+#               source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".zip"
+#               destination = "/media/pi/" + dest[0]
                SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
-               try:
-                   shutil.copy(source, destination)              #writes to Flash Memory
-               except PermissionError:
-                   shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
+#               try:
+#                   shutil.copy(source, destination)              #writes to Flash Memory
+#               except PermissionError:
+#                   shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
             
             os.system("sync")
             time.sleep(1)
