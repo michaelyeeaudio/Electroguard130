@@ -12,6 +12,14 @@ In "Files", "volume management"
 System libraries:
 sudo apt-get update
 sudo apt-get install python-smbus python3-smbus python-dev python3-dev i2c-tools
+SYSTEMD is how to run on boot
+edit crontab -e: add #reboot python3 /home/pi/Documents/ElectroguardPi/ElectroguardMeter1a_button.py
+
+df
+
+devtmpfs             4096          0       4096   0% /dev
+tmpfs            16405080       3128   16401952   1% /dev/shm
+tmpfs             6562032       2000    6560032   1% /run
 
 Copy ElectroguardPi directory into /home/pi
 - Run Calibrate130.py 

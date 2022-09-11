@@ -90,8 +90,8 @@ GrnRed2 = .25
 label_vis = 0
 
 win = tk.Tk()
-#win.attributes('-fullscreen',True)
-win.geometry("800x400+0+0")
+win.attributes('-fullscreen',True)
+#win.geometry("800x400+0+0")
 
 def show_xtra_but():
     InitBut.config(text="ClearFile", padx=20, pady=15, fg="black", bg="#D0D1AB", activebackground="#D0D1AB", command=lambda: select(7))
@@ -110,13 +110,15 @@ def chk_usb():
     global mounted
     global childrn_str
     global sda_name
+    global sda_label
     # returns 0 to insert, 1 inserted not mounted, 2 ready to write
     USBcommand = "lsblk"
     lsblk_rtn = str(os.system(USBcommand))
-    process = subprocess.run("lsblk --json -o NAME,MOUNTPOINT".split(), capture_output=True, text=True)    
+    process = subprocess.run("lsblk --json -o NAME,LABEL,MOUNTPOINT".split(), capture_output=True, text=True)    
     blockdevices = json.loads(process.stdout)
     blocknames = (blockdevices['blockdevices'])
     childrn = blocknames[0]['children']
+    sda_label = childrn[0]['label']
     mounted = str((childrn[0]['mountpoint']))
     childrn_str = str(childrn)
     
@@ -423,10 +425,12 @@ def select(number):
             loc1 = childrn_str.find("sda")                   #find sda1 or sda2
             if (loc1 > 0):
                 sda_name = childrn_str[loc1:loc1+4]
-                cmd = "sudo mount /dev/" + sda_name + " /media/pi/" + dest[0]
+                cmd = "sudo mount /dev/" + sda_name + " /media/pi/" + sda_label
                 os.system(cmd)
-                cmd = "sudo mkdir /media/pi/" + dest[0]
-                os.system(cmd)
+                a = os.path.exists("/media/pi/" + sda_label)
+                if(a == False):
+                    cmd = "sudo mkdir /media/pi/" + sda_label
+                    os.system(cmd)
                 usbinserted = 2           #if usbinserted==1 but no location
 
         if (usbinserted == 2):
@@ -438,53 +442,45 @@ def select(number):
             Type = type(newname)
             print ("Serial Numb = ", newname)
             print("Type = ",Type)            
-#first the big data file            
-#            source = "/home/pi/Documents/ElectroguardPi/Electroguard.txt"
-#            destination = "/home/pi/Documents/"
-#            shutil.copy(source, destination)            #copy Electroguard.txt into /Documents
-#            shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
-#            destination = "/media/pi/dest"
-            
-#            print("dest", dest[loc1+1:loc2])
-#           shutil.copy(source, destination)            #copy Electroguard.txt into /media/pi/+dest[0]
-            
+#first the big data file                        
             RTCTime = getRTCtime()
             NewFileName =newname +"_" + RTCTime[0:10]
             NewFileNameZip = NewFileName + ".zip"
             shutil.copyfile("Electroguard.txt", NewFileName + ".txt")
             with zipfile.ZipFile(NewFileNameZip, "w", compression=zipfile.ZIP_DEFLATED) as newzip:
                 newzip.write(NewFileName + ".txt")
-            
-#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.zip", newname +"_" + RTCTime[0:10] +".zip")
-#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.zip", newname +"_" + RTCTime[0:10] +".zip")
-#            os.rename("/home/pi/Documents/ElectroguardPi/Electroguard.txt", "/home/pi/Documents/test1.txt")
+
             source = "/home/pi/Documents/ElectroguardPi/" + NewFileNameZip
-            destination = "/media/pi/" + dest[0]
+            destination = "/media/pi/" + sda_label
             print("1 destination =", destination)
             print("1 source =", source)
             try:
                 shutil.copy(source, destination)              #writes to Flash Memory
             except PermissionError:
                 shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
+            os.remove("/home/pi/Documents/ElectroguardPi/" + NewFileName + ".txt")
+            os.remove("/home/pi/Documents/ElectroguardPi/" + NewFileNameZip)
             
 #second the small data file
 #            p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
             file_exists = exists('diags.txt')
             if (file_exists == True):
-#            if (p.find('/home/pi/Documents/ElectroguardPi/diags.txt')>0):
-#               source = "diags.txt"
-#               destination = "/home/pi/Documents/"
-#               shutil.copy(source, destination)            #copy Electroguard.txt into /Document
-               with zipfile.ZipFile(NewFileName + "diags.zip", "w", compression=zipfile.ZIP_DEFLATED) as newzip:
-                  newzip.write("diags.txt")
+                newname = str(sernum) + "diags"
+                NewFileName =newname +"_" + RTCTime[0:10]
+                NewFileNameZip = NewFileName + ".zip"
+                shutil.copyfile("diags.txt", NewFileName + ".txt")
+                with zipfile.ZipFile(NewFileNameZip, "w", compression=zipfile.ZIP_DEFLATED) as newzip:
+                    newzip.write(NewFileName + ".txt")
 #               os.rename("/home/pi/Documents/diags.txt", "/home/pi/Documents/" + newname +"_diags_" + RTCTime[0:10] +".zip")
-#               source = "/home/pi/Documents/"+ newname +"_diags_" + RTCTime[0:10] +".zip"
-#               destination = "/media/pi/" + dest[0]
-               SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
-#               try:
-#                   shutil.copy(source, destination)              #writes to Flash Memory
-#               except PermissionError:
-#                   shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
+                source = "/home/pi/Documents/ElectroguardPi/" + NewFileNameZip
+                destination = "/media/pi/" + sda_label
+                try:
+                   shutil.copy(source, destination)              #writes to Flash Memory
+                except PermissionError:
+                   shutil.os.system('sudo cp "{}" "{}"'.format(source,destination))
+                os.remove("/home/pi/Documents/ElectroguardPi/" + NewFileName + ".txt")
+                os.remove("/home/pi/Documents/ElectroguardPi/" + NewFileNameZip)
+                SelSaveData.config(bg="orange", activebackground="orange",  text="Writing")
             
             os.system("sync")
             time.sleep(1)
