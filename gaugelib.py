@@ -86,16 +86,17 @@ class DrawGauge2(ini):
 
         
     def draw_background2(self, divisions=100):
-        self.canvas.create_arc(self.size/5, self.size/6, self.size-self.size/6, self.size-self.size/6,
+        self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
                                style="arc",width=self.size/10,start=30, extent=36,
 #                               style="arc",width=self.size/10,start=-61, extent=61,
                                outline = "red")#style=tk.PIESLICE
         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               style="arc",width=self.size/10,start=65, extent=61,
+#                                style="arc",width=self.size/10,start=65, extent=61,
+                               style="arc",width=self.size/10,start=65, extent=55,
 #                               width=self.size/10,style="arc", start=0, extent=60,
                                outline = "green")
         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
-                               width=self.size/10,style="arc",start=127, extent=10,
+                               width=self.size/10,style="arc",start=120, extent=20,
 #                               width=self.size/10,style="arc",start=60, extent=60,
                                outline = "yellow")
 #         self.canvas.create_arc(self.size/6, self.size/6, self.size-self.size/6, self.size-self.size/6,
@@ -267,7 +268,8 @@ class DrawGauge3(ini):
 #        print("set_value")
         number = number if number <= self.max_value else self.max_value
         number = number if number > self.min_value else self.min_value
-        degree = 90.0 + (number- self.min_value) / (self.max_value - self.min_value) * 180.0
+        degree = (number- self.min_value) / (self.max_value - self.min_value) * 180.0
+#        degree = 90.0 + (number- self.min_value) / (self.max_value - self.min_value) * 180.0
         draw_dial(self.canvas,self.size/2,self.size/2,-1*degree,self.size/3,8)
         label = str('%.2f' % number)
         self.canvas.delete(self.readout)
