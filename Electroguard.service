@@ -1,6 +1,6 @@
 [Unit]
 Description=Electoguard Meter on boot
-After=graphical.target
+After=default.target
 
 [Service]
 ExecStart=/usr/bin/python3 /home/pi/Documents/ElectroguardPi/ElectroguardMeter1a_button.py
