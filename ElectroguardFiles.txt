@@ -13,6 +13,12 @@ System libraries:
 sudo apt-get update
 sudo apt-get install python-smbus python3-smbus python-dev python3-dev i2c-tools
 
+Startup:
+- Electroguard.service copy into /home/pi/.config/systemd/user
+- cp Electoguard.service etc/systemd/system
+- systemctl enable Electroguard.service
+- systemctl start Electroguard.service
+
 Special commands:
 - os.listdir
 - os.walk

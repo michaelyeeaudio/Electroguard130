@@ -16,7 +16,11 @@ def bcd2bin(x):
 def Num2BCD(number):    #number is the number you want to convert, num_digits is 2 for year, etc
     strNum = str(number)
     numb_cnt = len(strNum)
-    if(numb_cnt > 1):
+    if(numb_cnt == 4):
+        BCDnumber = (int(strNum[2])*16)+int(strNum[3])
+    elif(numb_cnt == 3):
+        BCDnumber = (int(strNum[1])*16)+int(strNum[2])
+    elif(numb_cnt == 2):
         BCDnumber = (int(strNum[0])*16)+int(strNum[1])
     else:
         BCDnumber = number
@@ -41,7 +45,25 @@ RTChour = bcd2bin(bus1.read_byte_data(0x6F, 0x02) & 0x3F)
 RTCminutes = bcd2bin (bus1.read_byte_data(0x6F, 0x01) & 0x7F)
 status = bus1.read_byte_data(0x6F, 0x00)
 print("status = ", status)
+if (len(str(RTCmonth)) == 1):
+    RTCmonthB = "0"+str(RTCmonth)
+else:
+    RTCmonthB = str(RTCmonth)
+if (len(str(RTCdate)) == 1):
+    RTCdateB = "0"+str(RTCdate)
+else:
+    RTCdateB = str(RTCdate)
+if (len(str(RTChour)) == 1):
+    RTChourB = "0"+str(RTChour)
+else:
+    RTChourB = str(RTChour)
+if (len(str(RTCminutes)) == 1):
+    RTCminutesB = "0"+str(RTCminutes)
+else:
+    RTCminutesB = str(RTCminutes)
 
+DateTime = "20"+(str(RTCyear)) + "-" + (str(RTCmonthB)) + "-" + (str(RTCdateB)) + " " + (str(RTChourB)) + ":" + (str(RTCminutesB))
+print (DateTime)
 print ("RTC= %02d:%02d:%02d:%02d:%02d" % (RTCyear, RTCmonth, RTCdate, RTChour, RTCminutes))
 #d = date.today()
 t = str(datetime.now())
@@ -58,12 +80,12 @@ if ((choice1 == "n") | (choice1 == "N")):
     print("BCD Year", BCDyear)
     month = input ("enter the month (08)")
     BCDmonth = Num2BCD(month)
-    day = input ("enter the day (31)")
+    day = input ("enter the day (04)")
     BCDday = Num2BCD(day)
     time = input ("enter the hour and minutes (13:59)")
     atpos = time.find(':')
-    BCDhour = 0xC0 | Num2BCD(int(time[atpos-2:atpos]), 2)
-    BCDminutes = Num2BCD(int(time[atpos+1:atpos+3]), 2)
+    BCDhour = 0x40 | Num2BCD(int(time[atpos-2:atpos]))
+    BCDminutes = Num2BCD(int(time[atpos+1:atpos+3]))
 else :
     year = t[2:4]
     BCDyear = Num2BCD(year)
@@ -111,7 +133,7 @@ print ("%02d:%02d:%02d:%02d:%02d" % (RTCyear, RTCmonth, RTCdate, RTChour, RTCmin
 
 ##################CHANNEL DATA###############
 #CH1
-chansel = int(input("enter chansel (15)"))
+chansel = int(input("enter chansel (15-4chan,7-3chan,3-2chan,1-1chan)"))
 ch1offset = int(input("enter ch1offset (0 (mV))"))
 ch1gain = int(input("enter ch1gain (1000 (mV))"))
 ch1gain = int(float(128/((ch1gain-ch1offset)/1000)))

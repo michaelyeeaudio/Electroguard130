@@ -188,8 +188,9 @@ def read_nvram():
     global ch4offset
     global sernum
     global chansel
-    NVSerNum = ""
+    global NVSerNum
     SNcksum = 0; CALcksum = 0;
+    NVSerNum = ""
 
     #############Reading the file#########################
     file_exists = exists("/home/pi/Documents/ElectroguardPi/eguardsettings.txt")
@@ -367,6 +368,8 @@ def select(number):
         SelChan2.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan3.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan4.config(bg="#D0D1AB", activebackground="#D0D1AB")
+        repeat5 = 0
+        clr_xtra_but()
         return
 
     elif number == 2:
@@ -374,6 +377,8 @@ def select(number):
         SelChan1.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan3.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan4.config(bg="#D0D1AB", activebackground="#D0D1AB")
+        repeat5 = 0
+        clr_xtra_but()
         return
 
     elif number == 3:
@@ -381,6 +386,8 @@ def select(number):
         SelChan2.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan1.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan4.config(bg="#D0D1AB", activebackground="#D0D1AB")
+        repeat5 = 0
+        clr_xtra_but()
         return
 
     elif number == 4:
@@ -388,6 +395,8 @@ def select(number):
         SelChan2.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan3.config(bg="#D0D1AB", activebackground="#D0D1AB")
         SelChan1.config(bg="#D0D1AB", activebackground="#D0D1AB")
+        repeat5 = 0
+        clr_xtra_but()
         return
 
     elif number == 5:
@@ -395,19 +404,21 @@ def select(number):
         choice = prev_choice
         if(label_vis == 0):
             label_vis = 1
-            label_2 = Label(win, text = "SerNum = " + SerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset), font="Times 12", fg="white", bg = "black")
+            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset) + ", Config = " + str(chansel), font="Times 12", fg="white", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="white", bg = "black")
         else:
             # label_1.destroy()
-            label_2 = Label(win, text = "SerNum = " + SerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset), font="Times 12", fg="black", bg = "black")
+            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset) + ", Config = " + str(chansel), font="Times 12", fg="black", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="black", bg = "black")
             label_vis = 0
-        label_1.place(x=20, y=370)
-        label_2.place(x=20, y=350)
+        label_1.place(x=20, y=400)
+        label_2.place(x=20, y=380)
         return
 
 #        print("I'm at 5")
     elif number == 6:
+        repeat5 = 0
+        clr_xtra_but()
         choice = prev_choice
 #        os.system("sudo rm -r /media/pi/*")
 #        os.system("sudo mkdir -p /media/pi/mount")
@@ -488,10 +499,10 @@ def select(number):
         choice = prev_choice
         p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
         print("listdir = ", p)
-        if (p.find('Electroguard.txt') > 0):
-            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
-        if (p.find('diags.txt')>0):
-            os.remove("/home/pi/Documents/ElectroguardPi/diags.txt")
+#        if (p.find('Electroguard.txt') > 0):
+#            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
+#        if (p.find('diags.txt')>0):
+#            os.remove("/home/pi/Documents/ElectroguardPi/diags.txt")
         repeat5 = 0
         clr_xtra_but()
         return
@@ -500,8 +511,8 @@ def select(number):
         choice = prev_choice
         p = str(os.listdir('/home/pi/Documents/ElectroguardPi'))
         print("listdir = ", p)
-        if (p.find('Electroguard.txt') > 0):
-            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
+#        if (p.find('Electroguard.txt') > 0):
+#            os.remove("/home/pi/Documents/ElectroguardPi/Electroguard.txt")
         repeat5 = 0
         clr_xtra_but()
         return
@@ -926,7 +937,7 @@ def list_dirs():
 
 RTCTime = getRTCtime()
 win = tk.Tk()
-# win.attributes('-fullscreen',True)
+win.attributes('-fullscreen',True)
 #win.geometry("800x400+0+0")
 #global p1
 
@@ -941,7 +952,7 @@ p1 = gaugelib.DrawGauge2(
     size=500,
     bg_col='black',
     unit = "Volts",bg_sel = 2)
-p1.place(x=40, y=25)
+p1.place(x=10, y=50)
 
 # image
 img2 = PhotoImage(file = "/home/pi/Documents/ElectroguardPi/EGuardLogoSm.PNG")
@@ -1000,7 +1011,7 @@ a5 = PhotoImage(file="/home/pi/Documents/ElectroguardPi/g2.png")
 # win.tk.call('wm', 'iconphoto', win._w, a5)
 win.title("Electroguard Raspberry Pi Version 2.0")
 #win.attributes('-fullscreen',True)
-win.geometry("800x400+0+0")
+win.geometry("800x440+0+0")
 #win.geometry('zoomed')    #("800x400+0+0")
 # win.resizable(width=True, height=True)
 win.configure(bg='black')
