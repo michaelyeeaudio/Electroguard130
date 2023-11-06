@@ -187,6 +187,7 @@ def read_nvram():
     global ch3offset
     global ch4offset
     global sernum
+    global modelnum
     global chansel
     global NVSerNum
     SNcksum = 0; CALcksum = 0;
@@ -202,7 +203,12 @@ def read_nvram():
                 if line.startswith("SerialNumber"):
                     begin = line.find(" ")
                     end = len(line)
-                    sernum = line[(begin + 1):(end - 2)]
+                    sernum = line[(begin + 1):(end - 1)]
+                if line.startswith("ModelNumber"):
+                    begin = line.find(" ")
+                    end = len(line)
+                    modelnum = line[(begin + 1):(end - 1)]
+                    print("model number =", modelnum)
                 if line.startswith("chansel"):
                     begin = line.find(" ")
                     end = len(line)
@@ -250,6 +256,7 @@ def read_nvram():
                     end = len(line)
                     ch4gain = int(line[(begin + 1):end])
     print("sernum =", sernum)
+#    print("model_num =", modnum)
     print("chansel =", chansel)
     print("SNcksum =", SNcksum)
     print("CALcksum =", CALcksum)
@@ -314,8 +321,8 @@ def read_nvram():
         ch4gain = RTch4gain
 
     ser_num_len = bus1.read_byte_data(0x6F, 0x30)
-    if (ser_num_len > 12):
-        ser_num_len = 12
+    if (ser_num_len > 13):
+        ser_num_len = 13
     checksum2 = bus1.read_byte_data(0x6F, 0x31)
     sernumb_chksum = ser_num_len
     for x in range(0, ser_num_len):
@@ -404,11 +411,11 @@ def select(number):
         choice = prev_choice
         if(label_vis == 0):
             label_vis = 1
-            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset) + ", Config = " + str(chansel), font="Times 12", fg="white", bg = "black")
+            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", ModelNumber = "+ modelnum + ", Config = " + str(chansel), font="Times 12", fg="white", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="white", bg = "black")
         else:
             # label_1.destroy()
-            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", Gain1 = "+ str(ch1gain) + ", Offset1 = " + str(ch1offset) + ", Config = " + str(chansel), font="Times 12", fg="black", bg = "black")
+            label_2 = Label(win, text = "SerNum = " + NVSerNum + ", Time = " + RTCTime + ", ModelNumber = "+ modelnum + ", Config = " + str(chansel), font="Times 12", fg="black", bg = "black")
             label_1 = Label(win, text = "Electroguard Inc. 317 Deetz Rd #D, Mt Shasta, CA 96067, ph:530 926 4800 email:info@boatcorrosion.com", font="Times 12", fg="black", bg = "black")
             label_vis = 0
         label_1.place(x=20, y=400)

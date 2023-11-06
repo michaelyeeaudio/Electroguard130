@@ -73,7 +73,7 @@ month = int(t[5:7])
 day = int(t[8:10])
 hour = int(t[11:13])
 minutes = int(t[14:16])
-choice1 = input ("Is this the correct date?")
+choice1 = input ("Is the RTC the correct date/time?")
 if ((choice1 == "n") | (choice1 == "N")):
     year = input ("enter the year (2021)")
     BCDyear = Num2BCD(year)
@@ -112,7 +112,7 @@ print("write minutes =", BCDminutes)
     
 #     #get the right bits
 
-wait = input("stopped, y to continue")
+#wait = input("stopped, y to continue")
 bus1.write_byte_data(0x6F, 0x00, 0x80)   #Start Oscillator
 bus1.write_byte_data(0x6F, 0x06, BCDyear)
 bus1.write_byte_data(0x6F, 0x05, BCDmonth)
@@ -178,8 +178,8 @@ bus1.write_byte_data(0x6F, 0x29, ch4gain)   #write Ch4offset
 # Store max 12 digits of serial number / name
 ser_num = input ("enter the serial number")
 ser_num_len = len(ser_num)
-if (ser_num_len) > 12:
-    ser_num_len = 12
+if (ser_num_len) > 13:
+    ser_num_len = 13
 RTCsernum = str(ser_num[0:ser_num_len])
 print("ser_num = %s" % (RTCsernum))
 
@@ -192,8 +192,23 @@ for x in range (0, ser_num_len):
 checksum2 = (checksum2 + ser_num_len) & 0x000000FF
 bus1.write_byte_data(0x6F, 0x31, checksum2 & 0x000000ff)
 
+################## MODEL NUMBER CONFIGURATION #####################
+# Store max 12 digits of serial number / name
+mod_num = input ("enter the model number and configuration - 134S-2R/1S-1R/2S")
+mod_num_len = len(mod_num)
+if (mod_num_len) > 16:
+    mod_num_len = 16
+RTCmodnum = str(mod_num[0:mod_num_len])
+print("mod_num = %s" % (RTCmodnum))
+
+bus1.write_byte_data(0x6F, 0x30, ser_num_len)     #this is the sernum length
+#checksum2 = 0 no checksum for configuration
+for x in range (0, ser_num_len):
+    print(RTCsernum[x])
+    bus1.write_byte_data(0x6F, 0x32 + x, ord(RTCsernum[x]))
+
 #######Write File######################
-CalList = ["SerialNumber", "chansel", "SNCheckSum", "CalCheckSum", "ch1offset", "ch1gain","ch2offset", "ch2gain","ch3offset", "ch3gain","ch4offset", "ch4gain"]
+CalList = ["SerialNumber", "ModelNumber", "chansel", "SNCheckSum", "CalCheckSum", "ch1offset", "ch1gain","ch2offset", "ch2gain","ch3offset", "ch3gain","ch4offset", "ch4gain"]
 file_exists = exists("/home/pi/Documents/ElectroguardPi/eguardsettings.txt")
 if(file_exists):
     os.remove("/home/pi/Documents/ElectroguardPi/eguardsettings.txt")
@@ -201,6 +216,8 @@ if(file_exists):
 with open("/home/pi/Documents/ElectroguardPi/eguardsettings_b.txt", "w") as output:
     print("SerialNumber \n", RTCsernum)
     output.write("SerialNumber " + RTCsernum + "\n")
+    print("ModelNumber \n", RTCmodnum)
+    output.write("ModelNumber " + RTCmodnum + "\n")
     print("chansel \n", chansel)
     output.write("chansel " + str(chansel) + "\n")
     print("SNCheckSum \n", checksum2)

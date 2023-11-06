@@ -41,7 +41,7 @@ Copy ElectroguardPi directory into /home/pi
 - Run Calibrate130.py 
 0xXX01-Ch1 only, 0x02-Ch2 only, etc. 0x15 all channels selected
 0x01xx-Ch1 common REF, 0x00xx-Ch1 common Sense
-- Run TimeSerNum2.py, check time, enter SerialNumber
+- Run TimeSerNum2.py, check time, enter SerialNumber, Model#
 - Run ReadI2C, check time
 
 Calibrate130.py:
@@ -114,35 +114,37 @@ I2C Memory (0x6F):
 0x2F - 
 0x30 - SerNumLen
 0x31 - checksum2 (this appears to be the checksum of the serial number this includes the length)
-0x32 - Serial Number digit (first)
+// SERIAL NUMBER ////
+0x32 - Serial Number digit (first), this is the model number/metal group - 134S
 0x33 - Serial Number digit
 0x34 - Serial Number digit
-0x35 - Serial Number digit
-0x36 - Serial Number digit
-0x37 - Serial Number digit
-0x38 - Serial Number digit
-0x39 - Serial Number digit
-0x3A - Serial Number digit
-0x3B - Serial Number digit
-0x3C - Serial Number digit
-0x3D - Serial Number digit (last)
-0x3E - Model Number digit  (first)
-0x3F - Model Number digit
-0x40 - Model Number digit  (last)
-0x41 - 
-0x42 - 
-0x43 - 
-0x44 - 
-0x45 - 
-0x46 - 
-0x47 -
-0x48 - 
-0x49 -
-0x4A -
-0x4B -
-0x4C -
-0x4D -
-0x4E -
+0x35 - Serial Number digit - this is the metal group S/A/ etc
+0x36 - Serial Number digit - month
+0x37 - Serial Number digit - month
+0x38 - Serial Number digit - day
+0x39 - Serial Number digit - day
+0x3A - Serial Number digit - year
+0x3B - Serial Number digit - year
+0x3C - Serial Number digit - 00x
+0x3D - Serial Number digit
+0x3E - Serial Number digit (last)
+//Model Number / Configuration
+0x3F - Model Number digit  (first)
+0x40 - Model Number digit
+0x41 - Model Number digit
+0x42 - Metal Group
+0x43 - Configuration, two sets of 6 digits "-1R/2S-1R/2S"
+0x44 - ///////////////
+0x45 - ///////////////
+0x46 - ///////////////
+0x47 - ///////////////
+0x48 - ///////////////
+0x49 - ///////////////
+0x4A - ///////////////
+0x4B - ///////////////
+0x4C - ///////////////
+0x4D - ///////////////
+0x4E - last digit of configuration
 0x4F -  
 0x50 - 
 0x51 - 
